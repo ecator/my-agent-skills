@@ -1,0 +1,6 @@
+description = "按照Conventional Commits规范生成commit message"
+prompt = """
+# Task: Generate Commit Message
+
+请通过`git diff --staged`命令来获取变更点，然后按照Conventional Commits规范生成commit message。
+"""
