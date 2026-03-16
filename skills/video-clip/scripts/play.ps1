@@ -36,7 +36,7 @@ if ($null -eq $StartTime -or $StartTime.Length -eq 0) {
 }
 
 if ($Path.Exists) {
-    mpv $Path --start=$StartTime
+    mpv $Path --start=$StartTime 2> $null
 }
 else {
     Write-Error "File Not Exists: $Path"

@@ -27,6 +27,8 @@ description: 对指定视频进行剪辑或者对指定音视频进行分析
 如果用户还指定了mp3文件那么也需要确认是否存在同名的md描述文件，如果不存在，调用`scripts/gen-audio-description.ps1`生成音频描述。
 调用示例：`pwsh -File "scripts\gen-audio-description.ps1" -InputFile "PATH\TO\input.mp3"`
 
+**YOU MUST INVOKE SCRIPTS TO GENERATE DESCRIPTIONS, DO NOT GENERATE DESCRIPTIONS BY YOURSELF**
+
 ### 创建临时文件夹
 
 因为剪辑是一件非常繁琐的任务，中间可能会生成很多临时文件或者脚本，所以请在项目根路径下创建一个名为`temp`的文件夹。
