@@ -30,6 +30,37 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 
+def escape_markdown(text: str) -> str:
+    """
+    转义markdown中的特殊字符
+    """
+    text = text.replace("\\", "\\\\")
+    text = text.replace("|", "\\|")
+    return text
+
+
+def hold2md(data: dict) -> str:
+    """
+    将持仓数据转换为markdown格式
+    """
+    asset_total = data["assetTotal"]
+    asset_list = data["assetList"]
+    md = "# 基金产品"
+    md += f"\n- 总额（元）：{asset_total[0]['strValue']}"
+    md += f"\n- 持仓收益（元）：{asset_total[1]['strValue']}"
+    md += f"\n- 累计收益（元）：{asset_total[2]['strValue']}"
+    md += "\n\n"
+    md += "## 持仓明细"
+    if asset_list and len(asset_list) > 0:
+        md += "\n产品代码|产品名称|产品类型|最新净值|净值日期|金额（元）|持仓收益（元）|持仓收益（%）"
+        md += "\n---|---|---|---|---|---|---|---"
+        for asset in asset_list:
+            md += f"\n{asset['fundCode']}|{escape_markdown(asset['fundName'])}|{asset['fundTypeName']}|{asset['nav']}|{asset['navdate']}|{asset['assetValue']}|{asset['profitValue']}|{asset['profitPercent']}"
+    else:
+        md += "\n还没有购买任何基金"
+    return md
+
+
 def run(playwright: Playwright) -> None:
     browser = playwright.chromium.launch(headless=True)
     context = browser.new_context()
@@ -43,7 +74,7 @@ def run(playwright: Playwright) -> None:
     page.locator("#btn_login").click()
     page.wait_for_load_state("networkidle")
 
-    result = page.evaluate("""
+    hold_data = page.evaluate("""
         async () => {
             const response = await fetch("/request/hold", {
                 "headers": {
@@ -61,7 +92,8 @@ def run(playwright: Playwright) -> None:
             return json.result;
         }
     """)
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    # print(json.dumps(hold_data, ensure_ascii=False, indent=2))
+    print(hold2md(hold_data))
 
     page.locator(".logout").first.click()
     page.wait_for_load_state("networkidle")
