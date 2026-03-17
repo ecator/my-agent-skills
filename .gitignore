@@ -4,4 +4,8 @@ __pycache__/
 node_modules/
 thumbs.db
 test.py
+test.md
+test.ps1
+test.bat
+test.sh
 tests/
