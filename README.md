@@ -11,3 +11,6 @@ Windows需要用`mklink /j`方式。
 ## 参考
 
 - [妙想金融SKILL](https://ai.eastmoney.com/mxClaw)
+- [东方财富妙想Skills](https://marketing.dfcfs.com/views/finskillshub/index)
+- [AKShare](https://akshare.akfamily.xyz)
+- [IP属地](https://www.ipshudi.com/)
