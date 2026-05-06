@@ -14,4 +14,4 @@ Windows需要用`mklink /j`方式。
 - [东方财富妙想Skills](https://marketing.dfcfs.com/views/finskillshub/index)
 - [AKShare](https://akshare.akfamily.xyz)
 - [IP属地](https://www.ipshudi.com/)
-- [MCP CSharp SDK](https://csharp.sdk.modelcontextprotocol.io/index.html)
+- [MCP CSharp SDK](https://csharp.sdk.modelcontextprotocol.io)
