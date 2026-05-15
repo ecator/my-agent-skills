@@ -13,7 +13,7 @@ $SuccessCount = 0
 $ErrorCount = 0
 $SkippedCount = 0
 
-# 把所有分类点卡后还需要全部展开后再运行
+# 把所有分类点开后还需要全部展开后再运行
 # copy(Array.from(document.querySelectorAll("div[data-docs-layout] > div > aside a")).filter(i=>i.href.startsWith("https://platform.claude.com/docs/en/")).map(i=>i.href).join("\n"))
 $DocLinks = Get-Content $DocFile
 
