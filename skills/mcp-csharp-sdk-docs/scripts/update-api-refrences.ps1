@@ -12,8 +12,8 @@ if (!(Test-Path $ApiFolder)) {
     exit 1
 }
 
-# copy(Array.from(document.getElementsByClassName("jumplist")).map((i)=>"\""+i.childNodes[1].firstChild.href+"\"").join("\n,")) 
-$AapiLinks = @(
+# copy(Array.from(document.getElementsByClassName("jumplist")).map((i)=>"\""+i.childNodes[1].firstChild.href+"\"").join("\n,"))
+$ApiLinks = @(
     "https://csharp.sdk.modelcontextprotocol.io/api/Microsoft.AspNetCore.Builder.McpEndpointRouteBuilderExtensions.html"
     , "https://csharp.sdk.modelcontextprotocol.io/api/Microsoft.Extensions.DependencyInjection.HttpMcpServerBuilderExtensions.html"
     , "https://csharp.sdk.modelcontextprotocol.io/api/Microsoft.Extensions.DependencyInjection.IMcpMessageFilterBuilder.html"
@@ -263,12 +263,12 @@ $AapiLinks = @(
 )
 
 $jobs = @()
-for ($i = 0; $i -lt $AapiLinks.Count; $i++) {
-    $link = $AapiLinks[$i]
+for ($i = 0; $i -lt $ApiLinks.Count; $i++) {
+    $link = $ApiLinks[$i]
     $urls = $link -split "/"
     $name = $urls[-1] -replace ".html", ".md"
     $path = Join-Path $ApiFolder $name
-    Write-Host -ForegroundColor Yellow "[$($i+1)/$($AapiLinks.Count)] Downloading $link to $path"
+    Write-Host -ForegroundColor Yellow "[$($i+1)/$($ApiLinks.Count)] Downloading $link to $path"
     $job = Start-ThreadJob -ScriptBlock {
         param(
             $link,
