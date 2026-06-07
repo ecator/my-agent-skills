@@ -19,3 +19,4 @@ Windows需要用`mklink /j`方式。
 - [Claude Code Docs](https://code.claude.com/docs/en/overview)
 - [OpenCode Docs](https://opencode.ai/docs)
 - [IP66 — Free IP Geolocation Database](https://ip66.dev/)
+- [Remotion](https://www.remotion.dev/docs/)
