@@ -17,6 +17,7 @@ Windows需要用`mklink /j`方式。
 - [MCP CSharp SDK](https://csharp.sdk.modelcontextprotocol.io)
 - [Claude API Docs](https://platform.claude.com/docs/en/home)
 - [Claude Code Docs](https://code.claude.com/docs/en/overview)
+- [Claude Docs](https://claude.com/docs)
 - [OpenCode Docs](https://opencode.ai/docs)
 - [IP66 — Free IP Geolocation Database](https://ip66.dev/)
 - [Remotion](https://www.remotion.dev/docs/)
