@@ -210,7 +210,10 @@ Claude Code runs on the same models as the Claude app, and you can switch
 mid-session. *Sonnet* is the workhorse default for everyday feature work,
 bugs, tests, and reviews. Reach for *Opus* on large refactors, gnarly
 debugging, or anything high-stakes. Drop to *Haiku* for quick questions,
-formatting, and mechanical edits where speed wins.
+formatting, and mechanical edits where speed wins. *Fable 5* is the most
+capable model for your hardest, longest-running tasks; it is not the
+default, so select it with `/model fable`, and note that cybersecurity and
+biology content falls back to Opus automatically.
 
 *Try it now:* type `/model` and pick Sonnet if you haven't already. It is
 the right default for most tasks.
@@ -218,11 +221,12 @@ the right default for most tasks.
 📖 Model configuration → https://code.claude.com/docs/en/model-config
 ```
 
-| Model  | Best for                                                                                  |
-| ------ | ----------------------------------------------------------------------------------------- |
-| Opus   | Large-scale refactors, complex debugging, architecture decisions, high-stakes changes     |
-| Sonnet | Everyday feature work, bug fixes, tests, documentation, code review. Recommended default. |
-| Haiku  | Quick questions, formatting, mechanical edits, rapid iteration                            |
+| Model   | Best for                                                                                                                                                                         |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fable 5 | The hardest, longest-running tasks. Opt-in only: select it with `/model fable`. Cybersecurity or biology content [falls back to Opus](/en/model-config#automatic-model-fallback) |
+| Opus    | Large-scale refactors, complex debugging, architecture decisions, high-stakes changes                                                                                            |
+| Sonnet  | Everyday feature work, bug fixes, tests, documentation, code review. Recommended default.                                                                                        |
+| Haiku   | Quick questions, formatting, mechanical edits, rapid iteration                                                                                                                   |
 
 **Quick wins to try first**
 
@@ -295,8 +299,9 @@ Works for whole directories too.
 Sometimes you want Claude to ask before every edit. Sometimes you just want
 it to ship. You shouldn't have to pick one forever.
 
-*Shift+Tab* cycles through how much leash Claude gets: *default* asks before
-risky stuff, *acceptEdits* lets file edits and common filesystem commands
+*Shift+Tab* cycles through how much Claude can do without asking: *Manual* (the
+`default` setting value) asks before each action, *acceptEdits* lets file
+edits and common filesystem commands
 flow through while still checking before other shell commands, and *plan*
 proposes changes for your approval before anything is touched. Plan mode is
 the trust-builder, so start there for anything touching multiple files.

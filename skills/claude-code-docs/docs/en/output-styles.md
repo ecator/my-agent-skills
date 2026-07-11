@@ -15,7 +15,7 @@ Claude Code's **Default** output style is the existing system prompt, designed t
 
 There are three additional built-in output styles:
 
-* **Proactive**: Claude executes immediately, makes reasonable assumptions instead of pausing for routine decisions, and prefers action over planning. This applies the same guidance as [auto mode](/en/permission-modes#eliminate-prompts-with-auto-mode) without changing your permission mode, so you still see permission prompts before tools run.
+* **Proactive**: Claude executes immediately, makes reasonable assumptions instead of pausing for routine decisions, and prefers action over planning. This is stronger autonomous-execution guidance than [auto mode](/en/permission-modes#eliminate-prompts-with-auto-mode) applies, and it works without changing your permission mode, so you still see permission prompts before tools run.
 
 * **Explanatory**: Provides educational "Insights" in between helping you complete software engineering tasks. Helps you understand implementation choices and codebase patterns.
 
@@ -25,6 +25,8 @@ There are three additional built-in output styles:
 
 Run `/config` and select **Output style** to pick a style from a menu. Your selection is saved to `.claude/settings.local.json` at the [local project level](/en/settings).
 
+<Note>{/* max-version: 2.1.90 */}The standalone `/output-style` command was deprecated in v2.1.73 and removed in v2.1.91. Use `/config` or edit the `outputStyle` setting directly.</Note>
+
 To set a style without the menu, edit the `outputStyle` field directly in a settings file:
 
 ```json theme={null}
@@ -33,7 +35,7 @@ To set a style without the menu, edit the `outputStyle` field directly in a sett
 }
 ```
 
-Because the output style is set in the system prompt at session start, changes take effect the next time you start a new session. This keeps the system prompt stable throughout a conversation so prompt caching can reduce latency and cost.
+Output style is part of the system prompt, which Claude Code reads once at session start. Changes take effect after `/clear` or a new session. See [How Claude Code uses prompt caching](/en/prompt-caching#changing-output-style) for what an output style change does to the cache.
 
 ## Create a custom output style
 
@@ -46,6 +48,8 @@ A custom output style is a Markdown file: frontmatter for metadata, then the ins
     * User: `~/.claude/output-styles`
     * Project: `.claude/output-styles`
     * Managed policy: `.claude/output-styles` inside the [managed settings directory](/en/settings#settings-files)
+
+    Project output styles load from every `.claude/output-styles/` between the working directory and the repository root. {/* min-version: 2.1.178 */}As of v2.1.178, when more than one of these nested directories defines a style with the same name, Claude Code uses the one closest to the working directory.
   </Step>
 
   <Step title="Add frontmatter and instructions">
@@ -69,7 +73,7 @@ A custom output style is a Markdown file: frontmatter for metadata, then the ins
   </Step>
 
   <Step title="Switch to your style">
-    Run `/config` and select your style under **Output style**. It takes effect the next time you start a session.
+    Run `/config` and select your style under **Output style**. It takes effect after `/clear` or the next time you start a session.
   </Step>
 </Steps>
 
@@ -111,7 +115,7 @@ Several features customize how Claude Code behaves. Output styles modify the sys
 ## Related resources
 
 * [Settings](/en/settings): where the `outputStyle` field lives and how settings precedence works
-* [Permission modes](/en/permission-modes): the Proactive style mirrors auto mode without changing your permission mode
+* [Permission modes](/en/permission-modes): how the Proactive style compares to auto mode
 * [Plugins](/en/plugins): package and distribute output styles alongside skills, hooks, and agents
 * [Debug your configuration](/en/debug-your-config): diagnose why an output style isn't taking effect
 

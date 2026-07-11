@@ -84,7 +84,7 @@ Both contain raw Claude API events, not accumulated text. You need to extract an
       uuid: str  # Unique identifier for this event
       session_id: str  # Session identifier
       event: dict[str, Any]  # The raw Claude API stream event
-      parent_tool_use_id: str | None  # Parent tool ID if from a subagent
+      parent_tool_use_id: str | None  # Always None
   ```
 
   ```typescript TypeScript theme={null}
@@ -94,9 +94,12 @@ Both contain raw Claude API events, not accumulated text. You need to extract an
     parent_tool_use_id: string | null;
     uuid: UUID;
     session_id: string;
+    ttft_ms?: number; // Time to first token in ms, present only on message_start events
   };
   ```
 </CodeGroup>
+
+The `parent_tool_use_id` field is always `None` in Python and `null` in TypeScript. Stream events are emitted for the main session only; token-level deltas from subagents aren't forwarded. To attribute output to a subagent, use complete messages, which carry `parent_tool_use_id`. See [Detect subagent invocation](/en/agent-sdk/subagents#detect-subagent-invocation).
 
 The `event` field contains the raw streaming event from the [Claude API](https://platform.claude.com/docs/en/build-with-claude/streaming#event-types). Common event types include:
 
@@ -379,9 +382,6 @@ This example combines text and tool streaming into a cohesive UI. It tracks whet
 
 ## Known limitations
 
-Some SDK features are incompatible with streaming:
-
-* **Extended thinking**: when you explicitly set `max_thinking_tokens` (Python) or `maxThinkingTokens` (TypeScript), `StreamEvent` messages are not emitted. You'll only receive complete messages after each turn. Note that thinking is disabled by default in the SDK, so streaming works unless you enable it.
 * **Structured output**: the JSON result appears only in the final `ResultMessage.structured_output`, not as streaming deltas. See [structured outputs](/en/agent-sdk/structured-outputs) for details.
 
 ## Next steps

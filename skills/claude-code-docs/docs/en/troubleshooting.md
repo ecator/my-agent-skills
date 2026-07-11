@@ -5,18 +5,19 @@
 
 This page covers performance, stability, and search problems once Claude Code is running. For other issues, start with the page that matches where you're stuck:
 
-| Symptom                                                                                                 | Go to                                                                                    |
-| :------------------------------------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------- |
-| `command not found`, install fails, PATH issues, `EACCES`, TLS errors                                   | [Troubleshoot installation and login](/en/troubleshoot-install)                          |
-| Login loops, OAuth errors, `403 Forbidden`, "organization disabled", Bedrock/Vertex/Foundry credentials | [Troubleshoot installation and login](/en/troubleshoot-install#login-and-authentication) |
-| Settings not applying, hooks not firing, MCP servers not loading                                        | [Debug your configuration](/en/debug-your-config)                                        |
-| `API Error: 5xx`, `529 Overloaded`, `429`, request validation errors                                    | [Error reference](/en/errors)                                                            |
-| `model not found` or `you may not have access to it`                                                    | [Error reference](/en/errors#theres-an-issue-with-the-selected-model)                    |
-| VS Code extension not connecting or detecting Claude                                                    | [VS Code integration](/en/vs-code#fix-common-issues)                                     |
-| JetBrains plugin or IDE not detected                                                                    | [JetBrains integration](/en/jetbrains#troubleshooting)                                   |
-| High CPU or memory, slow responses, hangs, search not finding files                                     | [Performance and stability](#performance-and-stability) below                            |
+| Symptom                                                                                                                                              | Go to                                                                                    |
+| :--------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------- |
+| `command not found`, install fails, PATH issues, `EACCES`, TLS errors                                                                                | [Troubleshoot installation and login](/en/troubleshoot-install)                          |
+| Update or install download fails with `The connection dropped while downloading the update` or `aborted`                                             | [Error reference](/en/errors#the-connection-dropped-while-downloading-the-update)        |
+| Login loops, OAuth errors, `403 Forbidden`, "organization disabled", Amazon Bedrock, Google Cloud's Agent Platform, or Microsoft Foundry credentials | [Troubleshoot installation and login](/en/troubleshoot-install#login-and-authentication) |
+| Settings not applying, hooks not firing, MCP servers not loading                                                                                     | [Debug your configuration](/en/debug-your-config)                                        |
+| `API Error: 5xx`, `529 Overloaded`, `429`, request validation errors                                                                                 | [Error reference](/en/errors)                                                            |
+| `model not found` or `you may not have access to it`                                                                                                 | [Error reference](/en/errors#theres-an-issue-with-the-selected-model)                    |
+| VS Code extension not connecting or detecting Claude                                                                                                 | [VS Code integration](/en/vs-code#fix-common-issues)                                     |
+| JetBrains plugin or IDE not detected                                                                                                                 | [JetBrains integration](/en/jetbrains#troubleshooting)                                   |
+| High CPU or memory, slow responses, hangs, search not finding files                                                                                  | [Performance and stability](#performance-and-stability) below                            |
 
-If you're not sure which applies, run `/doctor` inside Claude Code for an automated check of your installation, settings, MCP servers, and context usage. If `claude` won't start at all, run `claude doctor` from your shell instead.
+If you're not sure which applies, run `/doctor` inside Claude Code for an automated check of your installation, settings, extensions, and context usage; it proposes fixes it can apply after you confirm. If `claude` won't start at all, run `claude doctor` from your shell instead. Run `/mcp` to check MCP server status.
 
 ## Performance and stability
 
@@ -29,6 +30,7 @@ Claude Code is designed to work with most development environments, but may cons
 1. Use `/compact` regularly to reduce context size
 2. Close and restart Claude Code between major tasks
 3. Consider adding large build directories to your `.gitignore` file
+4. Restart with [`claude --safe-mode`](/en/cli-reference#cli-flags) to check whether a plugin, MCP server, or hook is the source. It disables all customizations for the session; if usage drops, see [Debug your configuration](/en/debug-your-config#test-against-a-clean-configuration) to find which one
 
 If memory usage stays high after these steps, run `/heapdump` to write a JavaScript heap snapshot and a memory breakdown to `~/Desktop`. On Linux without a Desktop folder, the files are written to your home directory.
 
@@ -53,6 +55,10 @@ If Claude Code seems unresponsive:
 2. If unresponsive, you may need to close the terminal and restart
 
 Restarting doesn't lose your conversation. Run `claude --resume` in the same directory to pick the session back up.
+
+### Garbled or corrupted text in an editor's integrated terminal
+
+If characters render as boxes, smears, or the wrong glyphs when running Claude Code in the VS Code, Cursor, or Devin Desktop integrated terminal, the terminal's GPU renderer is likely the cause. Run `/terminal-setup` inside Claude Code to set `terminal.integrated.gpuAcceleration` to `"off"`, or set it manually in your editor settings and reload the window. See [Terminal configuration](/en/terminal-config) for the other settings `/terminal-setup` writes.
 
 ### Search and discovery issues
 
@@ -97,7 +103,7 @@ Then set `USE_BUILTIN_RIPGREP=0` in your [environment](/en/env-vars).
 Disk read performance penalties when [working across file systems on WSL](https://learn.microsoft.com/en-us/windows/wsl/filesystems) may result in fewer-than-expected matches when using Claude Code on WSL. Search still functions, but returns fewer results than on a native filesystem.
 
 <Note>
-  `/doctor` will show Search as OK in this case.
+  `claude doctor` shows Search as OK in this case.
 </Note>
 
 **Solutions:**
@@ -112,7 +118,7 @@ Disk read performance penalties when [working across file systems on WSL](https:
 
 If you're experiencing issues not covered here:
 
-1. Run `/doctor` to check installation health, settings validity, MCP configuration, and context usage in one pass
+1. Run `/doctor` for a setup checkup and `/mcp` to check MCP server status
 2. Use the `/feedback` command within Claude Code to report problems directly to Anthropic
 3. Check the [GitHub repository](https://github.com/anthropics/claude-code) for known issues
 4. Ask Claude directly about its capabilities and features. Claude has built-in access to its documentation.

@@ -44,6 +44,8 @@ To install Claude Code, use one of the following methods:
 
     If you see `The token '&&' is not a valid statement separator`, you're in PowerShell, not CMD. If you see `'irm' is not recognized as an internal or external command`, you're in CMD, not PowerShell. Your prompt shows `PS C:\` when you're in PowerShell and `C:\` without the `PS` when you're in CMD.
 
+    If the install command fails with `syntax error near unexpected token '<'`, a `403`, or another curl error, see [Troubleshoot installation](/en/troubleshoot-install#find-your-error) to match the error to a fix and for alternative install methods.
+
     [Git for Windows](https://git-scm.com/downloads/win) is recommended on native Windows so Claude Code can use the Bash tool. If Git for Windows is not installed, Claude Code uses PowerShell as the shell tool instead. WSL setups do not need Git for Windows.
 
     <Info>
@@ -78,25 +80,26 @@ You can also install with [apt, dnf, or apk](/en/setup#install-with-linux-packag
 
 ## Step 2: Log in to your account
 
-Claude Code requires an account to use. When you start an interactive session with the `claude` command, you'll need to log in:
+Claude Code requires an account to use. Start an interactive session with the `claude` command and you'll be prompted to log in on first use:
 
 ```bash theme={null}
 claude
-# You'll be prompted to log in on first use
 ```
 
-```bash theme={null}
+For Claude subscription or Console accounts, follow the prompts to complete authentication in your browser. To switch accounts later or re-authenticate, type `/login` inside the running session:
+
+```text theme={null}
 /login
-# Follow the prompts to log in with your account
 ```
 
 You can log in using any of these account types:
 
 * [Claude Pro, Max, Team, or Enterprise](https://claude.com/pricing?utm_source=claude_code\&utm_medium=docs\&utm_content=quickstart_login) (recommended)
 * [Claude Console](https://console.anthropic.com/) (API access with pre-paid credits). On first login, a "Claude Code" workspace is automatically created in the Console for centralized cost tracking.
-* [Amazon Bedrock, Google Vertex AI, or Microsoft Foundry](/en/third-party-integrations) (enterprise cloud providers)
+* [Amazon Bedrock, Google Cloud's Agent Platform, or Microsoft Foundry](/en/third-party-integrations) (enterprise cloud providers)
+* A self-hosted [Claude apps gateway](/en/claude-apps-gateway), if your organization runs one: your admin pre-configures the gateway URL, and `/login` opens directly on the **Cloud gateway** screen for you to sign in with corporate SSO
 
-Once logged in, your credentials are stored and you won't need to log in again. To switch accounts later, use the `/login` command.
+Once logged in, your credentials are stored and you won't need to log in again.
 
 ## Step 3: Start your first session
 
@@ -107,7 +110,7 @@ cd /path/to/your/project
 claude
 ```
 
-You'll see the Claude Code welcome screen with your session information, recent conversations, and latest updates. Type `/help` for available commands or `/resume` to continue a previous conversation.
+You'll see the Claude Code prompt with the version, current model, and working directory shown above it. Type `/help` for available commands or `/resume` to continue a previous conversation.
 
 <Tip>
   After logging in (Step 2), your credentials are stored on your system. Learn more in [Credential Management](/en/authentication#credential-management).
@@ -255,7 +258,9 @@ review my changes and suggest improvements
 
 ## Essential commands
 
-Here are the most important commands for daily use:
+Here are the most important commands for daily use. Shell commands run from your terminal to start or resume Claude Code. Session commands run inside Claude Code after it starts.
+
+**Shell commands**
 
 | Command             | What it does                                           | Example                             |
 | ------------------- | ------------------------------------------------------ | ----------------------------------- |
@@ -264,11 +269,16 @@ Here are the most important commands for daily use:
 | `claude -p "query"` | Run one-off query, then exit                           | `claude -p "explain this function"` |
 | `claude -c`         | Continue most recent conversation in current directory | `claude -c`                         |
 | `claude -r`         | Resume a previous conversation                         | `claude -r`                         |
-| `/clear`            | Clear conversation history                             | `/clear`                            |
-| `/help`             | Show available commands                                | `/help`                             |
-| `exit` or Ctrl+D    | Exit Claude Code                                       | `exit`                              |
 
-See the [CLI reference](/en/cli-reference) for a complete list of commands.
+**Session commands**
+
+| Command           | What it does               | Example  |
+| ----------------- | -------------------------- | -------- |
+| `/clear`          | Clear conversation history | `/clear` |
+| `/help`           | Show available commands    | `/help`  |
+| `/exit` or Ctrl+D | Exit Claude Code           | `/exit`  |
+
+See the [CLI reference](/en/cli-reference) for the complete list of shell commands and the [commands reference](/en/commands) for the complete list of session commands.
 
 ## Pro tips for beginners
 

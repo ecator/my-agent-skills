@@ -64,7 +64,8 @@ Each binding block specifies a **context** where the bindings apply:
 | `Select`          | Generic select/list components                               |
 | `Plugin`          | Plugin dialog (browse, discover, manage)                     |
 | `Scroll`          | Conversation scrolling and text selection in fullscreen mode |
-| `Doctor`          | `/doctor` diagnostics screen                                 |
+
+{/* max-version: 2.1.204 */}Before v2.1.205, a `Doctor` context and a `doctor:fix` action existed for the `/doctor` diagnostics screen.
 
 ## Available actions
 
@@ -74,13 +75,13 @@ Actions follow a `namespace:action` format, such as `chat:submit` to send a mess
 
 Actions available in the `Global` context:
 
-| Action                 | Default   | Description                 |
-| :--------------------- | :-------- | :-------------------------- |
-| `app:interrupt`        | Ctrl+C    | Cancel current operation    |
-| `app:exit`             | Ctrl+D    | Exit Claude Code            |
-| `app:redraw`           | (unbound) | Force terminal redraw       |
-| `app:toggleTodos`      | Ctrl+T    | Toggle task list visibility |
-| `app:toggleTranscript` | Ctrl+O    | Toggle verbose transcript   |
+| Action                 | Default   | Description                                                                                                  |
+| :--------------------- | :-------- | :----------------------------------------------------------------------------------------------------------- |
+| `app:interrupt`        | Ctrl+C    | Cancel current operation                                                                                     |
+| `app:exit`             | Ctrl+D    | Exit Claude Code                                                                                             |
+| `app:redraw`           | (unbound) | Force terminal redraw                                                                                        |
+| `app:toggleTodos`      | Ctrl+T    | Toggle visibility of Claude's to-do checklist. This is not the [`/tasks`](/en/commands) background-task view |
+| `app:toggleTranscript` | Ctrl+O    | Toggle verbose transcript                                                                                    |
 
 ### History actions
 
@@ -96,22 +97,22 @@ Actions for navigating command history:
 
 Actions available in the `Chat` context:
 
-| Action                | Default                   | Description                                                                                                                                                    |
-| :-------------------- | :------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `chat:cancel`         | Escape                    | Cancel current input                                                                                                                                           |
-| `chat:clearInput`     | Ctrl+L                    | Force a full screen redraw, preserving input. In [fullscreen rendering](/en/fullscreen#clear-the-conversation), press twice within two seconds to run `/clear` |
-| `chat:clearScreen`    | Cmd+K                     | In [fullscreen rendering](/en/fullscreen#clear-the-conversation), press twice within two seconds to run `/clear`                                               |
-| `chat:killAgents`     | Ctrl+X Ctrl+K             | Kill all running [background subagents](/en/sub-agents#run-subagents-in-foreground-or-background) in this session                                              |
-| `chat:cycleMode`      | Shift+Tab\*               | Cycle permission modes                                                                                                                                         |
-| `chat:modelPicker`    | Meta+P                    | Open model picker                                                                                                                                              |
-| `chat:fastMode`       | Meta+O                    | Toggle fast mode                                                                                                                                               |
-| `chat:thinkingToggle` | Meta+T                    | Toggle extended thinking                                                                                                                                       |
-| `chat:submit`         | Enter                     | Submit message                                                                                                                                                 |
-| `chat:newline`        | Ctrl+J                    | Insert a newline without submitting                                                                                                                            |
-| `chat:undo`           | Ctrl+\_, Ctrl+Shift+-     | Undo last action                                                                                                                                               |
-| `chat:externalEditor` | Ctrl+G, Ctrl+X Ctrl+E     | Open in external editor                                                                                                                                        |
-| `chat:stash`          | Ctrl+S                    | Stash current prompt                                                                                                                                           |
-| `chat:imagePaste`     | Ctrl+V (Alt+V on Windows) | Paste image                                                                                                                                                    |
+| Action                | Default                           | Description                                                                                                                                                    |
+| :-------------------- | :-------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `chat:cancel`         | Escape                            | Cancel current input                                                                                                                                           |
+| `chat:clearInput`     | Ctrl+L                            | Force a full screen redraw, preserving input. In [fullscreen rendering](/en/fullscreen#clear-the-conversation), press twice within two seconds to run `/clear` |
+| `chat:clearScreen`    | Cmd+K                             | In [fullscreen rendering](/en/fullscreen#clear-the-conversation), press twice within two seconds to run `/clear`                                               |
+| `chat:killAgents`     | Ctrl+X Ctrl+K                     | Stop all running [background subagents](/en/sub-agents#run-subagents-in-foreground-or-background) in this session                                              |
+| `chat:cycleMode`      | Shift+Tab\*                       | Cycle permission modes                                                                                                                                         |
+| `chat:modelPicker`    | Meta+P                            | Open model picker                                                                                                                                              |
+| `chat:fastMode`       | Meta+O                            | Toggle fast mode                                                                                                                                               |
+| `chat:thinkingToggle` | Meta+T                            | Toggle extended thinking                                                                                                                                       |
+| `chat:submit`         | Enter                             | Submit message                                                                                                                                                 |
+| `chat:newline`        | Ctrl+J                            | Insert a newline without submitting                                                                                                                            |
+| `chat:undo`           | Ctrl+\_, Ctrl+Shift+-             | Undo last action                                                                                                                                               |
+| `chat:externalEditor` | Ctrl+G, Ctrl+X Ctrl+E             | Open in external editor                                                                                                                                        |
+| `chat:stash`          | Ctrl+S                            | Stash current prompt                                                                                                                                           |
+| `chat:imagePaste`     | Ctrl+V (Alt+V on Windows and WSL) | Paste image from clipboard. On WSL, both shortcuts are bound by default                                                                                        |
 
 \*On Windows without VT mode (Node \<24.2.0/\<22.17.0, Bun \<1.2.23), defaults to Meta+M.
 
@@ -146,9 +147,9 @@ Actions available in the `Confirmation` context:
 
 Actions available in the `Confirmation` context for permission dialogs:
 
-| Action                   | Default | Description                  |
-| :----------------------- | :------ | :--------------------------- |
-| `permission:toggleDebug` | Ctrl+D  | Toggle permission debug info |
+| Action                   | Default   | Description                                                                                                         |
+| :----------------------- | :-------- | :------------------------------------------------------------------------------------------------------------------ |
+| `permission:toggleDebug` | (unbound) | Toggle permission debug info. The previous default of Ctrl+D was removed in v2.1.146 because it shadowed `app:exit` |
 
 ### Transcript actions
 
@@ -175,9 +176,9 @@ Actions available in the `HistorySearch` context:
 
 Actions available in the `Task` context:
 
-| Action            | Default | Description             |
-| :---------------- | :------ | :---------------------- |
-| `task:background` | Ctrl+B  | Background current task |
+| Action            | Default               | Description                                                                                                                                 |
+| :---------------- | :-------------------- | :------------------------------------------------------------------------------------------------------------------------------------------ |
+| `task:background` | Ctrl+B, Ctrl+X Ctrl+B | Background current task. {/* min-version: 2.1.169 */}The Ctrl+X Ctrl+B chord requires v2.1.169 or later and avoids the tmux prefix conflict |
 
 ### Theme actions
 
@@ -244,24 +245,36 @@ Actions available in the `MessageSelector` context:
 
 Actions available in the `DiffDialog` context:
 
-| Action                | Default            | Description            |
-| :-------------------- | :----------------- | :--------------------- |
-| `diff:dismiss`        | Escape             | Close diff viewer      |
-| `diff:previousSource` | Left               | Previous diff source   |
-| `diff:nextSource`     | Right              | Next diff source       |
-| `diff:previousFile`   | Up                 | Previous file in diff  |
-| `diff:nextFile`       | Down               | Next file in diff      |
-| `diff:viewDetails`    | Enter              | View diff details      |
-| `diff:back`           | (context-specific) | Go back in diff viewer |
+| Action                | Default            | Description                                                           |
+| :-------------------- | :----------------- | :-------------------------------------------------------------------- |
+| `diff:dismiss`        | Escape             | Close diff viewer                                                     |
+| `diff:previousSource` | Left               | Previous diff source                                                  |
+| `diff:nextSource`     | Right              | Next diff source                                                      |
+| `diff:previousFile`   | Up, K              | Previous file in the file list; scroll up one line in the detail view |
+| `diff:nextFile`       | Down, J            | Next file in the file list; scroll down one line in the detail view   |
+| `diff:viewDetails`    | Enter              | View diff details                                                     |
+| `diff:back`           | (context-specific) | Go back in diff viewer                                                |
+
+The diff detail view also binds pager-style keys to the standard [scroll actions](#scroll-actions). These bindings are part of the `DiffDialog` context and apply only in the detail view; the `Scroll` context defaults listed under [Scroll actions](#scroll-actions) are unchanged.
+
+| Action                | Default        | Description                 |
+| :-------------------- | :------------- | :-------------------------- |
+| `scroll:pageUp`       | PageUp         | Scroll up half a viewport   |
+| `scroll:pageDown`     | PageDown       | Scroll down half a viewport |
+| `scroll:fullPageUp`   | Shift+Space, B | Scroll up a full viewport   |
+| `scroll:fullPageDown` | Space          | Scroll down a full viewport |
+| `scroll:top`          | G, Home        | Jump to the top             |
+| `scroll:bottom`       | Shift+G, End   | Jump to the bottom          |
 
 ### Model picker actions
 
 Actions available in the `ModelPicker` context:
 
-| Action                       | Default | Description           |
-| :--------------------------- | :------ | :-------------------- |
-| `modelPicker:decreaseEffort` | Left    | Decrease effort level |
-| `modelPicker:increaseEffort` | Right   | Increase effort level |
+| Action                        | Default | Description                                  |
+| :---------------------------- | :------ | :------------------------------------------- |
+| `modelPicker:decreaseEffort`  | Left    | Decrease effort level                        |
+| `modelPicker:increaseEffort`  | Right   | Increase effort level                        |
+| `modelPicker:thisSessionOnly` | s       | Apply highlighted model to this session only |
 
 ### Select actions
 
@@ -286,21 +299,14 @@ Actions available in the `Plugin` context:
 
 ### Settings actions
 
-Actions available in the `Settings` context:
+Actions available in the `Settings` context. The `select:accept` and `confirm:no` actions are reused from the [Select](#select-actions) and [Confirmation](#confirmation-actions) contexts with Settings-specific behavior: changes apply to each setting as soon as you change it, so Escape closes the panel with your changes saved rather than declining.
 
-| Action            | Default | Description                                                                 |
-| :---------------- | :------ | :-------------------------------------------------------------------------- |
-| `settings:search` | /       | Enter search mode                                                           |
-| `settings:retry`  | R       | Retry loading usage data (on error)                                         |
-| `settings:close`  | Enter   | Save changes and close the config panel. Escape discards changes and closes |
-
-### Doctor actions
-
-Actions available in the `Doctor` context:
-
-| Action       | Default | Description                                                                                         |
-| :----------- | :------ | :-------------------------------------------------------------------------------------------------- |
-| `doctor:fix` | F       | Send the diagnostics report to Claude to fix the reported issues. Only active when issues are found |
+| Action            | Default      | Description                                     |
+| :---------------- | :----------- | :---------------------------------------------- |
+| `settings:search` | /            | Enter search mode                               |
+| `settings:retry`  | R            | Retry loading usage data on error               |
+| `select:accept`   | Enter, Space | Change the selected setting or open its submenu |
+| `confirm:no`      | Escape       | Close the panel. Changes are already saved      |
 
 ### Voice actions
 
@@ -397,11 +403,19 @@ Set an action to `null` to unbind a default shortcut:
 }
 ```
 
-This also works for chord bindings. Unbinding every chord that shares a prefix frees that prefix for use as a single-key binding:
+This also works for chord bindings. Unbinding every chord that shares a prefix frees that prefix for use as a single-key binding. A chord in any active context keeps its prefix reserved, so you must unbind each chord in the context that defines it.
+
+The default `Ctrl+X` family spans two contexts: `ctrl+x ctrl+k` and `ctrl+x ctrl+e` in `Chat`, and `ctrl+x ctrl+b` in `Task`. To reclaim `ctrl+x` itself as a single-key binding, unbind all of them:
 
 ```json theme={null}
 {
   "bindings": [
+    {
+      "context": "Task",
+      "bindings": {
+        "ctrl+x ctrl+b": null
+      }
+    },
     {
       "context": "Chat",
       "bindings": {
@@ -446,6 +460,7 @@ When vim mode is enabled via `/config` → Editor mode, keybindings and vim mode
 * The Escape key in vim mode switches INSERT to NORMAL mode; it does not trigger `chat:cancel`
 * Most Ctrl+key shortcuts pass through vim mode to the keybinding system
 * In vim NORMAL mode, `?` shows the help menu (vim behavior)
+* In vim NORMAL mode, `/` opens history search, the same as Ctrl+R in standard mode
 
 ## Validation
 
@@ -457,5 +472,5 @@ Claude Code validates your keybindings and shows warnings for:
 * Terminal multiplexer conflicts
 * Duplicate bindings in the same context
 
-Run `/doctor` to see any keybinding warnings.
+Claude Code reports warnings when the file loads and writes each one to the debug log. Start Claude Code with [`--debug`](/en/cli-reference#cli-flags) to see the details.
 

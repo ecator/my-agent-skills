@@ -19,7 +19,13 @@ Claude Code tracks all changes made by its file editing tools:
 
 ### Rewind and summarize
 
-Press `Esc` twice (`Esc` + `Esc`) or use the `/rewind` command to open the rewind menu. A scrollable list shows each of your prompts from the session. Select the point you want to act on, then choose an action:
+Run `/rewind`, or press `Esc` twice when the prompt input is empty, to open the rewind menu.
+
+<Note>
+  If the prompt input contains text, double `Esc` clears it instead of opening the menu. The cleared text is saved to your input history, so press `Up` to recall it after you finish in the rewind menu.
+</Note>
+
+The rewind menu lists each prompt you sent during the session. Select the point you want to act on, then choose an action:
 
 * **Restore code and conversation**: revert both code and conversation to that point
 * **Restore conversation**: rewind to that message while keeping current code
@@ -31,6 +37,10 @@ Press `Esc` twice (`Esc` + `Esc`) or use the `/rewind` command to open the rewin
 After restoring the conversation or choosing Summarize from here, the original prompt from the selected message is restored into the input field so you can re-send or edit it.
 
 Choosing Summarize up to here leaves you at the end of the conversation with the input empty.
+
+#### Rewind past a cleared conversation
+
+If you ran `/clear` earlier in the same Claude Code process, the rewind menu shows an additional entry at the top of the list labeled `/resume <session-id> (previous session)`. Select it to resume the conversation that was active before `/clear` ran. The entry is available until you exit Claude Code or resume a different session, and requires Claude Code v2.1.191 or later. On earlier versions, run `/resume` and pick the previous session from the list instead.
 
 #### Restore vs. summarize
 

@@ -3,7 +3,7 @@ name: claude-code-docs
 description: Official documentation for Claude Code, Anthropic's agentic coding tool available in the terminal, IDE, desktop app, and browser. Covers installation, configuration, skills, subagents, hooks, MCP, the Agent SDK, and reference material.
 metadata:
   author: Ecat
-  version: "2.1.136"
+  version: "2.1.207"
 ---
 
 # Claude Code Documentation
@@ -86,7 +86,44 @@ Because this documentation is a local mirror, internal links found within the te
 - [Tools Reference](docs/en/tools-reference.md)
 - [Glossary](docs/en/glossary.md)
 
+
+### 🆕 Newly Added Documentation
+- [Escalate hard decisions with the advisor tool](docs/en/advisor.md)
+- [Share session output as artifacts](docs/en/artifacts.md)
+- [Claude apps gateway configuration](docs/en/claude-apps-gateway-config.md)
+- [Claude apps gateway deployment and operations](docs/en/claude-apps-gateway-deploy.md)
+- [Deploy Claude apps gateway on Google Cloud](docs/en/claude-apps-gateway-on-gcp.md)
+- [Claude apps gateway spend limits](docs/en/claude-apps-gateway-spend-limits.md)
+- [Launch sessions from links](docs/en/deep-links.md)
+- [Claude Desktop on Linux (beta)](docs/en/desktop-linux.md)
+- [Schedule recurring tasks in Claude Code Desktop](docs/en/desktop-scheduled-tasks.md)
+- [Development containers](docs/en/devcontainer.md)
+- [Discover and install prebuilt plugins through marketplaces](docs/en/discover-plugins.md)
+- [Feature availability](docs/en/feature-availability.md)
+- [Fullscreen rendering](docs/en/fullscreen.md)
+- [Run Claude Code through a gateway](docs/en/gateways.md)
+- [Claude Code with GitHub Enterprise Server](docs/en/github-enterprise-server.md)
+- [Keep Claude working toward a goal](docs/en/goal.md)
+- [Run Claude Code programmatically](docs/en/headless.md)
+- [Set up Claude Code in a monorepo or large codebase](docs/en/large-codebases.md)
+- [Connect Claude Code to an LLM gateway](docs/en/llm-gateway-connect.md)
+- [Gateway protocol reference](docs/en/llm-gateway-protocol.md)
+- [Roll out an LLM gateway for your organization](docs/en/llm-gateway-rollout.md)
+- [Control MCP server access for your organization](docs/en/managed-mcp.md)
+- [Connect to MCP servers](docs/en/mcp-quickstart.md)
+- [Constrain plugin dependency versions](docs/en/plugin-dependencies.md)
+- [Recommend your plugin from your CLI](docs/en/plugin-hints.md)
+- [Recommend plugins for your org](docs/en/plugin-relevance.md)
+- [How Claude Code uses prompt caching](docs/en/prompt-caching.md)
+- [Prompt library](docs/en/prompt-library.md)
+- [Continue local sessions from any device with Remote Control](docs/en/remote-control.md)
+- [Choose a sandbox environment](docs/en/sandbox-environments.md)
+- [Configure the sandboxed Bash tool](docs/en/sandboxing.md)
+- [Catch security issues as Claude writes code](docs/en/security-guidance.md)
+- [Manage sessions](docs/en/sessions.md)
+- [Orchestrate subagents at scale with dynamic workflows](docs/en/workflows.md)
+
 ### 📢 Updates & Community
-- [Changelog](docs/en/changelog.md) | [Desktop Changelog](docs/en/desktop-changelog.md)
-- [What's New](docs/en/whats-new/index.md)
+- [Changelog](docs/en/changelog.md)
+- [What's New](docs/en/whats-new.md)
 - [Champion Kit](docs/en/champion-kit.md) | [Communications Kit](docs/en/communications-kit.md)

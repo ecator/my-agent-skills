@@ -5,12 +5,7 @@
 
 A [development container](https://containers.dev/), or dev container, lets you define an identical, isolated environment that every engineer on your team can run. With Claude Code installed in that container, commands Claude runs execute inside it rather than on the host machine, while edits to your project files appear in your local repository as you work.
 
-This page covers [installing Claude Code in a dev container](#add-claude-code-to-your-dev-container) and the configuration topics that follow. Each topic is self-contained, so jump to the ones that match what you need to set up:
-
-* [Persist authentication and settings across rebuilds](#persist-authentication-and-settings-across-rebuilds)
-* [Enforce organization policy](#enforce-organization-policy)
-* [Restrict network egress](#restrict-network-egress)
-* [Run without permission prompts](#run-without-permission-prompts)
+This page covers [installing Claude Code in a dev container](#add-claude-code-to-your-dev-container), then a set of self-contained configuration topics: persisting authentication across rebuilds, enforcing organization policy, restricting network egress, and running without permission prompts. Read the ones that match your setup.
 
 <Warning>
   While the dev container provides substantial protections, no system is completely immune to all attacks.
@@ -75,9 +70,9 @@ When you open the container in VS Code or Codespaces, the feature also adds the 
 What you see at the authentication prompt depends on your provider:
 
 * **Anthropic**: sign in through a browser with your Claude or Anthropic Console account
-* **[Amazon Bedrock, Google Vertex AI, or Microsoft Foundry](/en/third-party-integrations)**: Claude Code uses your cloud provider credentials, with no browser prompt
+* **[Amazon Bedrock, Google Cloud's Agent Platform, or Microsoft Foundry](/en/third-party-integrations)**: Claude Code uses your cloud provider credentials, with no browser prompt
 
-For cloud providers, pass credentials into the container as environment variables through `containerEnv`, a Codespaces secret, or your cloud's workload identity rather than mounting credential files from the host. See [Amazon Bedrock](/en/amazon-bedrock), [Google Vertex AI](/en/google-vertex-ai), or [Microsoft Foundry](/en/microsoft-foundry) for the credential chain Claude Code reads.
+For cloud providers, pass credentials into the container as environment variables through `containerEnv`, a Codespaces secret, or your cloud's workload identity rather than mounting credential files from the host. See [Amazon Bedrock](/en/amazon-bedrock), [Google Cloud's Agent Platform](/en/google-vertex-ai), or [Microsoft Foundry](/en/microsoft-foundry) for the credential chain Claude Code reads.
 
 See [Choose your API provider](/en/admin-setup#choose-your-api-provider) to decide which path fits your organization.
 
@@ -187,6 +182,7 @@ Once Claude Code is running in your dev container, the pages below cover the res
 * [Network access requirements](/en/network-config#network-access-requirements): the full domain allowlist for proxies and firewalls
 * [Telemetry services and opt-out](/en/data-usage#telemetry-services): what Claude Code sends by default and the environment variables that disable it
 * [Explore the `.claude` directory](/en/claude-directory): what the volume mount holds, including credentials, settings, and session history
+* [Sandbox environments](/en/sandbox-environments): compare dev containers with the built-in Bash sandbox, custom containers, and VMs
 * [Security model](/en/security): how Claude Code's permission system, sandboxing, and prompt-injection protections fit together
 * [Permission modes](/en/permission-modes): the full range from plan mode to auto mode to bypass, and when to use each
 

@@ -20,6 +20,8 @@ These are prompt patterns for everyday tasks like exploring unfamiliar code, deb
 
 ### Understand new codebases
 
+For configuring Claude Code in a monorepo or large codebase, see [Monorepos and large repos](/en/large-codebases).
+
 #### Get a quick codebase overview
 
 Suppose you've just joined a new project and need to understand its structure quickly.
@@ -234,7 +236,7 @@ You can create pull requests by asking Claude directly ("create a pr for my chan
   </Step>
 </Steps>
 
-When you create a PR using `gh pr create`, the session is automatically linked to that PR. To return to it later, run `claude --from-pr <number>` or paste the PR URL into the [`/resume` picker](/en/sessions#use-the-session-picker) search.
+When you create a PR using `gh pr create`, the session is automatically linked to that PR. To return to it later, run `claude --from-pr 123`, replacing 123 with the PR number, or paste the PR URL into the [`/resume` picker](/en/sessions#use-the-session-picker) search.
 
 <Tip>
   Review Claude's generated PR before submitting and ask Claude to highlight potential risks or considerations.
