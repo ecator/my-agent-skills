@@ -23,10 +23,12 @@ https://opencode.ai/docs/keybinds.md
 https://opencode.ai/docs/commands.md
 https://opencode.ai/docs/formatters.md
 https://opencode.ai/docs/permissions.md
+https://opencode.ai/docs/policies.md
 https://opencode.ai/docs/lsp.md
 https://opencode.ai/docs/mcp-servers.md
 https://opencode.ai/docs/acp.md
 https://opencode.ai/docs/skills.md
+https://opencode.ai/docs/references.md
 https://opencode.ai/docs/custom-tools.md
 https://opencode.ai/docs/sdk.md
 https://opencode.ai/docs/server.md

@@ -29,6 +29,7 @@ OpenCode has a list of keybinds that you can customize through `tui.json`.
 
     "session_export": "<leader>x",
     "session_copy": "none",
+    "session_move": "none",
     "session_new": "<leader>n",
     "session_list": "<leader>l",
     "session_timeline": "<leader>g",
@@ -140,6 +141,7 @@ OpenCode has a list of keybinds that you can customize through `tui.json`.
     "dialog.select.home": "home",
     "dialog.select.end": "end",
     "dialog.select.submit": "return",
+    "dialog.prompt.submit": "return",
     "dialog.mcp.toggle": "space",
     "prompt.autocomplete.prev": "up,ctrl+p",
     "prompt.autocomplete.next": "down,ctrl+n",
