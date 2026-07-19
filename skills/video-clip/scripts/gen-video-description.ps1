@@ -18,10 +18,9 @@ param (
     [System.IO.FileInfo]$InputFile
 )
 
-
-$OutputEncoding = [System.Text.Encoding]::UTF8
-[System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-[System.Console]::InputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.UTF8Encoding]::new()
+[console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
+[console]::InputEncoding = [System.Text.UTF8Encoding]::new()
 
 Push-Location $InputFile.DirectoryName
 $MarkdownFile = "$($InputFile.BaseName).md"
@@ -51,7 +50,7 @@ $prompt = "
 - 视频的潜在用途
 
 输出为markdown格式,注意一定要精确到秒单位,因为这个内容会作为剪辑的参考。
-只用输出最终结果即可,不需要多余的解释。
+把结果输出到``$MarkdownFile``文件中，如果这个文件已经存在那么直接覆盖即可。
 输出模板参考如下：
 ``````md
 # 视频分析报告
@@ -85,23 +84,19 @@ XXXX
 ``````
 
 **DO NOT USE ANY SKILLS**
-**DO NOT OUTPUT FILE NAME**
+**DO NOT OUTPUT VIDEO FILE NAME IN YOUR RESPONSE, ONLY OUTPUT THE DESCRIPTION**
 
+输出完毕后请再一次验证文件``$MarkdownFile``是否已经生成，并且读取内容是否和你分析的结果一致，如果文件么有生成或者结果不一致请尝试再次输出文件。
+
+---
+执行完毕后只需要回复：Description saved to ``$MarkdownFile``
 "
 
-$Description = $prompt | gemini
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Video Description generation failed"
-    Remove-Item "$TempCompressedFile" -ErrorAction SilentlyContinue
-    Pop-Location
-    exit $LASTEXITCODE
-}
+$prompt | agy --add-dir $InputFile.DirectoryName
 
-# 4. 将总结结果写入 .md 文件
-$Description | Out-File -FilePath $MarkdownFile -Encoding utf8 -Force
 
 # 5. 清理临时压缩文件
 Remove-Item "$TempCompressedFile" -ErrorAction SilentlyContinue
+Remove-Item ".antigravitycli" -Force -Recurse -ErrorAction SilentlyContinue
 
-Write-Host "Video Description file saved: $MarkdownFile"
 Pop-Location

@@ -18,7 +18,7 @@ $cmds = [ordered]@{
     "ffmpeg"  = "https://www.ffmpeg.org/download.html"
     "ffprobe" = "https://www.ffmpeg.org/download.html"
     "pwsh"    = "https://github.com/PowerShell/PowerShell"
-    "gemini"  = "https://geminicli.com/docs/get-started/installation/"
+    "agy"     = "https://antigravity.google/product/antigravity-cli"
 }
 
 foreach ($cmd in $cmds.GetEnumerator()) {

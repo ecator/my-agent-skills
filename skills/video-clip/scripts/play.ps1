@@ -27,16 +27,24 @@ param(
     [string]$StartTime
 )
 
-$OutputEncoding = [System.Text.Encoding]::UTF8
-[System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-[System.Console]::InputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.UTF8Encoding]::new()
+[console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
+[console]::InputEncoding = [System.Text.UTF8Encoding]::new()
 
 if ($null -eq $StartTime -or $StartTime.Length -eq 0) {
     $StartTime = "0"
 }
 
 if ($Path.Exists) {
-    mpv $Path --start=$StartTime 2> $null
+    $CmdLine = "`"$($(Get-Command mpv).Source)`" `"$($Path.FullName)`" --start=$StartTime"
+    $r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = $CmdLine }
+    if ($r.ReturnValue -eq 0) {
+        Write-Host "Successfully started playing $Path at $StartTime"
+    }
+    else {
+        Write-Error "Failed to play $Path"
+        exit 1
+    }
 }
 else {
     Write-Error "File Not Exists: $Path"

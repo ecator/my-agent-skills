@@ -6,11 +6,13 @@
 ## 调用示例
 
 ffmpeg
+
 ```powershell
-pwsh -File scripts\ffmpeg.ps1 -i input.mp4 <...other ffmpeg parameters...>  out.mp4
+pwsh -File scripts\ffmpeg.ps1 -i input.mp4 -y [...other ffmpeg parameters...]  out.mp4
 ```
 
 ffprobe
+
 ```powershell
-pwsh -File scripts\ffprobe.ps1 <...other ffmpeg parameters...>  input.mp4
+pwsh -File scripts\ffprobe.ps1 [...other ffmpeg parameters...]  input.mp4
 ```
