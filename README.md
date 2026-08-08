@@ -22,3 +22,4 @@ Windows需要用`mklink /j`方式。
 - [IP66 — Free IP Geolocation Database](https://ip66.dev/)
 - [Remotion](https://www.remotion.dev/docs/)
 - [OpenAI API Platform Documentation](https://developers.openai.com/api/docs)
+- [Conventional Commits](https://www.conventionalcommits.org)
