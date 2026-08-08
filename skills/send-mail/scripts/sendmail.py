@@ -9,6 +9,7 @@ import argparse
 import smtplib
 import mimetypes
 from email.message import EmailMessage
+import email.utils
 import sys
 from dotenv import load_dotenv
 
@@ -39,6 +40,11 @@ def send_mail(
     msg["Subject"] = subject
     msg["From"] = sender_email
     msg["To"] = to_email
+
+    # Add Date and Message-ID headers to satisfy RFC & Amavis checks (prevents BAD-HEADER-0)
+    msg["Date"] = email.utils.formatdate(localtime=True)
+    domain = sender_email.split("@")[-1] if "@" in sender_email else None
+    msg["Message-ID"] = email.utils.make_msgid(domain=domain)
 
     # Define content logic: text vs html
     if body_html:
@@ -73,17 +79,30 @@ def send_mail(
                 )
 
     # Send via SMTP
-    # print(f"Connecting to {smtp_server}:{smtp_port}...")
     try:
-        # Use implicit SSL if port is 465 (usually)
-        # However, testing showed port 465 on this server is NOT implicit SSL
-        # So we'll use SMTP and then STARTTLS
-        with smtplib.SMTP(smtp_server, int(smtp_port)) as server:
-            # server.set_debuglevel(1) # Uncomment for detailed logs
-            server.starttls()
-            server.login(smtp_user, smtp_password)
-            server.send_message(msg)
-            print(f"Email sent to {to_email} successfully!")
+        port = int(smtp_port)
+        use_ssl_env = os.getenv("SENDMAIL_USE_SSL", os.getenv("SENDMAIL_SMTP_USE_SSL", "")).lower()
+
+        if use_ssl_env in ("true", "1", "yes"):
+            use_ssl = True
+        elif use_ssl_env in ("false", "0", "no"):
+            use_ssl = False
+        else:
+            # Port 465 (postfix/submissions) uses implicit SSL (SMTP_SSL) by default
+            use_ssl = (port == 465)
+
+        if use_ssl:
+            with smtplib.SMTP_SSL(smtp_server, port) as server:
+                server.login(smtp_user, smtp_password)
+                server.send_message(msg)
+                print(f"Email sent to {to_email} successfully!")
+        else:
+            with smtplib.SMTP(smtp_server, port) as server:
+                if port == 587 or os.getenv("SENDMAIL_USE_STARTTLS", "").lower() in ("true", "1", "yes"):
+                    server.starttls()
+                server.login(smtp_user, smtp_password)
+                server.send_message(msg)
+                print(f"Email sent to {to_email} successfully!")
     except Exception as e:
         print(f"Failed to send email: {e}")
         sys.exit(1)
