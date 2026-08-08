@@ -92,7 +92,7 @@ XXXX
 执行完毕后只需要回复：Description saved to ``$MarkdownFile``
 "
 
-$prompt | agy --add-dir $InputFile.DirectoryName
+$prompt | agy --dangerously-skip-permissions --add-dir $InputFile.DirectoryName
 
 
 # 5. 清理临时压缩文件
