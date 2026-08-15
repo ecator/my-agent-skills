@@ -25,9 +25,9 @@ $OutputEncoding = [System.Text.UTF8Encoding]::new()
 Push-Location $InputFile.DirectoryName
 $MarkdownFile = "$($InputFile.BaseName).md"
 $TempCompressedFile = "$($InputFile.BaseName)_compressed.mp4"
+$JsonSchemaFile = Join-Path $PSScriptRoot -ChildPath "gen-video-description-output-schema.json"
 
-
-# 2. 调用 ffmpeg 进行压缩
+# 调用 ffmpeg 进行压缩
 ffmpeg -loglevel quiet -hwaccel cuda -hwaccel_output_format cuda -i "$($InputFile.FullName)"  -vf scale_cuda=-1:480 -c:v hevc_nvenc -rc vbr -cq 35 -preset p6 -y "$TempCompressedFile"
 
 if ($LASTEXITCODE -ne 0) {
@@ -38,7 +38,7 @@ if ($LASTEXITCODE -ne 0) {
 
 
 $prompt = "
-@$tempCompressedFile
+@$TempCompressedFile
 
 请按秒级别详细描述这个视频的内容，包括但不限于：
 - 视频的主题
@@ -50,9 +50,9 @@ $prompt = "
 - 视频的潜在用途
 
 输出为markdown格式,注意一定要精确到秒单位,因为这个内容会作为剪辑的参考。
-把结果输出到``$MarkdownFile``文件中，如果这个文件已经存在那么直接覆盖即可。
+把结果输出到``markdown``属性中。
 输出模板参考如下：
-``````md
+<template>
 # 视频分析报告
 XXX（关于这个视频的一个整体介绍，一句话概括即可）
 ## 视频信息概览
@@ -81,21 +81,26 @@ XXXXX
 ## 其他补充事项
 XXXX
 
-``````
+</template>
 
 **DO NOT USE ANY SKILLS**
 **DO NOT OUTPUT VIDEO FILE NAME IN YOUR RESPONSE, ONLY OUTPUT THE DESCRIPTION**
 
-输出完毕后请再一次验证文件``$MarkdownFile``是否已经生成，并且读取内容是否和你分析的结果一致，如果文件么有生成或者结果不一致请尝试再次输出文件。
-
----
-执行完毕后只需要回复：Description saved to ``$MarkdownFile``
 "
 
-$prompt | agy --dangerously-skip-permissions --add-dir $InputFile.DirectoryName
+$result = $prompt | agy --mode plan --disable-slash-commands --output-format json --json-schema $JsonSchemaFile --add-dir $InputFile.DirectoryName | ConvertFrom-Json
+#$result
+$description = $result.structured_output.markdown
 
+if ($null -eq $description -or $description.Trim() -eq "") {
+    Write-Error "Generate description failed"
+}
+else {
+    Write-Host "Generate description successfully: $MarkdownFile"
+    $description | Out-File -FilePath $MarkdownFile -Encoding UTF8
+}
 
-# 5. 清理临时压缩文件
+# 清理临时压缩文件
 Remove-Item "$TempCompressedFile" -ErrorAction SilentlyContinue
 Remove-Item ".antigravitycli" -Force -Recurse -ErrorAction SilentlyContinue
 

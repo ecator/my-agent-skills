@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "markdown": {
+      "type": "string"
+    }
+  },
+  "required": ["markdown"]
+}
