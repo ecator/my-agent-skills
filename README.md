@@ -21,3 +21,4 @@ Windows需要用`mklink /j`方式。
 - [Remotion](https://www.remotion.dev/docs/)
 - [OpenAI API Platform Documentation](https://developers.openai.com/api/docs)
 - [Conventional Commits](https://www.conventionalcommits.org)
+- [Pi Coding Agent](https://pi.dev/)
