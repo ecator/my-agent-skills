@@ -22,3 +22,4 @@ Windows需要用`mklink /j`方式。
 - [OpenAI API Platform Documentation](https://developers.openai.com/api/docs)
 - [Conventional Commits](https://www.conventionalcommits.org)
 - [Pi Coding Agent](https://pi.dev/)
+- [Google AI Studio Documentation](https://aistudio.google.com/docs?codelanguage=python)
