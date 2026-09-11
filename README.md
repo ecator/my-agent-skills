@@ -23,3 +23,4 @@ Windows需要用`mklink /j`方式。
 - [Conventional Commits](https://www.conventionalcommits.org)
 - [Pi Coding Agent](https://pi.dev/)
 - [Google AI Studio Documentation](https://aistudio.google.com/docs?codelanguage=python)
+- [larksuite/channel-sdk-python](https://github.com/larksuite/channel-sdk-python)
