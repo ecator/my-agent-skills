@@ -3,7 +3,7 @@
 生成视频的详细描述
 
 .DESCRIPTION
-压缩视频并使用gemini-cli生成秒级别视频描述以及剪辑建议，描述文件保存为跟输入文件同级路径下的同名md文件。
+压缩视频并使用antigravity-cli生成秒级别视频描述以及剪辑建议，描述文件保存为跟输入文件同级路径下的同名md文件。
 
 .PARAMETER InputFile
 输入视频文件路径
@@ -25,7 +25,7 @@ $OutputEncoding = [System.Text.UTF8Encoding]::new()
 Push-Location $InputFile.DirectoryName
 $MarkdownFile = "$($InputFile.BaseName).md"
 $TempCompressedFile = "$($InputFile.BaseName)_compressed.mp4"
-$JsonSchemaFile = Join-Path $PSScriptRoot -ChildPath "gen-video-description-output-schema.json"
+$JsonSchemaFile = Join-Path $PSScriptRoot -ChildPath "markdown-output-schema.json"
 
 # 调用 ffmpeg 进行压缩
 ffmpeg -loglevel quiet -hwaccel cuda -hwaccel_output_format cuda -i "$($InputFile.FullName)"  -vf scale_cuda=-1:480 -c:v hevc_nvenc -rc vbr -cq 35 -preset p6 -y "$TempCompressedFile"
@@ -88,7 +88,7 @@ XXXX
 
 "
 
-$result = $prompt | agy --mode plan --disable-slash-commands --output-format json --json-schema $JsonSchemaFile --add-dir $InputFile.DirectoryName | ConvertFrom-Json
+$result = $prompt | agy --sandbox --disable-slash-commands --output-format json --json-schema $JsonSchemaFile --add-dir $InputFile.DirectoryName | ConvertFrom-Json
 #$result
 $description = $result.structured_output.markdown
 

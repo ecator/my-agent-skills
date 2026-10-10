@@ -42,6 +42,8 @@ description: 对指定视频进行剪辑或者对指定音视频进行分析
 
 根据用户的需求选取合适的视频素材片段以及音乐素材片段。
 如果用户没有提供音乐或者提供的素材不合适，那么可以参考`assets/bgm`和`assets/fx`下面的音乐素材，同名的md文件为音频描述文件，可以作为参考。
+如果没有同名的md文件可以调用`scripts/gen-audio-description.ps1`生成音频描述文件。
+调用示例：`pwsh -File "scripts\gen-audio-description.ps1" -InputFile "PATH\TO\input.mp3"`
 
 如果用户指定了文本内容，那么请从`assets/fonts`下面选取合适的字体。
 
