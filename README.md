@@ -24,3 +24,7 @@ Windows需要用`mklink /j`方式。
 - [Pi Coding Agent](https://pi.dev/)
 - [Google AI Studio Documentation](https://aistudio.google.com/docs?codelanguage=python)
 - [larksuite/channel-sdk-python](https://github.com/larksuite/channel-sdk-python)
+- [DingTalk-Real-AI/dingtalk-channel-sdk-python](https://github.com/DingTalk-Real-AI/dingtalk-channel-sdk-python)
+- [DingTalk-Real-AI/dingtalk-channel-sdk-nodejs](https://github.com/DingTalk-Real-AI/dingtalk-channel-sdk-nodejs)
+- [DingTalk-Real-AI/dingtalk-channel-sdk-go](https://github.com/DingTalk-Real-AI/dingtalk-channel-sdk-go)
+- [DingTalk-Real-AI/dingtalk-channel-sdk-java](https://github.com/DingTalk-Real-AI/dingtalk-channel-sdk-java)
