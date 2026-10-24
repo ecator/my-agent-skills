@@ -1,251 +1,307 @@
-OpenCode uses the `permission` config to decide whether a given action should run automatically, prompt you, or be blocked.
+# Permissions
 
-As of `v1.1.1`, the legacy `tools` boolean config is deprecated and has been merged into `permission`. The old `tools` config is still supported for backwards compatibility.
+Permissions control whether an agent may perform an action on a resource.
 
----
+## Configure
+
+A common setup is to ask before running shell commands, allow routine Git
+inspection, and always block pushes. Add these ordered rules to `opencode.jsonc`:
+
+```jsonc
+{
+  "$schema": "https://opencode.ai/config.json",
+  "permissions": [
+    { "action": "shell", "resource": "*", "effect": "ask" },
+    { "action": "shell", "resource": "git status *", "effect": "allow" },
+    { "action": "shell", "resource": "git diff *", "effect": "allow" },
+    { "action": "shell", "resource": "git push *", "effect": "deny" },
+  ],
+}
+```
+
+The last matching rule wins, so the specific exceptions follow the broad rule.
+
+<Callout type="warning">
+  V1 uses different field and action names. In V2, use `permissions`, `shell`, and `subagent` instead of `permission`,
+  `bash`, and `task`.
+</Callout>
+
+## Rules
+
+Each rule requires three string fields:
+
+| Field      | Meaning                                                                    |
+| ---------- | -------------------------------------------------------------------------- |
+| `action`   | Tool permission action                                                     |
+| `resource` | Value being used, such as a path, command, URL, query, skill ID, or agent ID |
+| `effect`   | `allow`, `deny`, or `ask`                                                   |
+
+```jsonc
+{
+  "permissions": [
+    { "action": "read", "resource": "*", "effect": "allow" },
+    { "action": "read", "resource": "*.env", "effect": "deny" },
+  ],
+}
+```
+
+| Effect  | Result                              |
+| ------- | ----------------------------------- |
+| `allow` | Continue without prompting          |
+| `deny`  | Block the operation                 |
+| `ask`   | Wait for a decision from the client |
+
+If no rule matches, OpenCode uses `ask`.
+
+## Matching
+
+Actions and resources use simple whole-value wildcards:
+
+| Pattern | Match                                      |
+| ------- | ------------------------------------------ |
+| `*`     | Zero or more characters, including `/`    |
+| `?`     | Exactly one character                     |
+| Other   | The literal character                     |
+
+```jsonc
+{
+  "permissions": [
+    { "action": "edit", "resource": "packages/docs/*.mdx", "effect": "allow" },
+  ],
+}
+```
+
+This pattern matches the entire normalized path. Backslashes are normalized to
+slashes, and matching is case-insensitive on Windows.
+
+A shell pattern ending in ` *` also matches the command without arguments:
+
+```jsonc
+{ "action": "shell", "resource": "git status *", "effect": "allow" }
+```
+
+This matches both `git status` and `git status --short`.
+
+OpenCode combines rules in order and uses the last match. Lower-priority
+configuration is loaded first, global rules are appended next, and agent rules
+are appended last.
+
+```jsonc
+{
+  "permissions": [
+    { "action": "read", "resource": "*", "effect": "allow" },
+    { "action": "read", "resource": "secrets/*", "effect": "deny" },
+  ],
+}
+```
+
+Operations may check several resources, such as a patch that touches multiple
+files. Any `deny` denies the operation; otherwise any `ask` asks; otherwise the
+operation is allowed.
 
 ## Actions
 
-Each permission rule resolves to one of:
+V2 action names are strings, so plugins may define more actions. Built-in tools
+currently use these actions and resources:
 
-- `"allow"` — run without approval
-- `"ask"` — prompt for approval
-- `"deny"` — block the action
+| Action               | Resource                                                                    |
+| -------------------- | --------------------------------------------------------------------------- |
+| `read`               | Location-relative internal path or canonical absolute external path         |
+| `edit`               | Target path for `edit`, `write`, and `patch`                                |
+| `glob`               | Requested glob pattern                                                      |
+| `grep`               | Requested regular expression, not the search path                           |
+| `shell`              | Scanner-produced command string; compound commands may produce several      |
+| `subagent`           | Target agent ID                                                             |
+| `skill`              | Skill ID                                                                    |
+| `question`           | `*`                                                                         |
+| `webfetch`           | Requested URL                                                               |
+| `websearch`          | Search query                                                                |
+| `external_directory` | Canonical external directory boundary, normally ending in `/*`              |
+| `<server>_<tool>`    | `*` for an MCP tool; unsupported characters in both names become `_`        |
+| `opencode_list_mcp_resources` | MCP server name                                                    |
+| `opencode_read_mcp_resource`  | `<server>:<uri>`                                                   |
+| `execute`            | `*`; a deny removes Code Mode and the tools reached only through it, while nested tools enforce their rules |
 
----
+For example, allow one skill and deny all other skills:
 
-## Auto mode
-
-Start OpenCode with `--auto` to automatically approve permission requests that are not explicitly denied.
-
-```bash
-opencode --auto
-```
-
-You can also use auto mode with [`opencode run`](/docs/cli#run).
-
-```bash
-opencode run --auto "Refactor this module"
-```
-
-Explicit `"deny"` rules are still enforced. Auto mode only changes requests that would otherwise ask for approval.
-
-In the TUI, open the command palette and select **Enable auto-approve permissions** or **Disable auto-approve permissions** to change modes. When auto mode is active, the prompt displays a muted `auto` indicator next to the current agent.
-
----
-
-## Configuration
-
-You can set permissions globally (with `*`), and override specific tools.
-
-```json title="opencode.json"
+```jsonc
 {
-  "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "*": "ask",
-    "bash": "allow",
-    "edit": "deny"
-  }
+  "permissions": [
+    { "action": "skill", "resource": "*", "effect": "deny" },
+    { "action": "skill", "resource": "effect", "effect": "allow" },
+  ],
 }
 ```
 
-You can also set all permissions at once:
+`doom_loop` and `lsp` are not current V2 Core permission actions.
 
-```json title="opencode.json"
+## Directories
+
+A path outside both the active Location and its non-root project worktree is
+checked against `external_directory` before its `read` or `edit` rules. The
+default policy allows `external_directory`, so external paths are not prompted
+unless you add a rule. To be asked before any access outside the project:
+
+```jsonc
 {
   "$schema": "https://opencode.ai/config.json",
-  "permission": "allow"
+  "permissions": [
+    { "action": "external_directory", "resource": "*", "effect": "ask" },
+  ],
 }
 ```
 
----
+Narrower rules after it can allow or deny specific directories:
 
-## Granular Rules (Object Syntax)
-
-For most permissions, you can use an object to apply different actions based on the tool input.
-
-```json title="opencode.json"
+```jsonc
 {
   "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "bash": {
-      "*": "ask",
-      "git *": "allow",
-      "npm *": "allow",
-      "rm *": "deny",
-      "grep *": "allow"
-    },
-    "edit": {
-      "*": "deny",
-      "packages/web/src/content/docs/*.mdx": "allow"
-    }
-  }
+  "permissions": [
+    { "action": "external_directory", "resource": "~/projects/reference/*", "effect": "allow" },
+    { "action": "read", "resource": "~/projects/reference/*", "effect": "allow" },
+    { "action": "edit", "resource": "~/projects/reference/*", "effect": "deny" },
+  ],
 }
 ```
 
-Rules are evaluated by pattern match, with the **last matching rule winning**. A common pattern is to put the catch-all `"*"` rule first, and more specific rules after it.
+This applies to external paths used by `read`, `edit`, `write`, and `patch`.
+Shell checks its external working directory and directories inferred by its
+scanner before checking `shell` resources.
 
-### Wildcards
+For `external_directory`, `read`, and `edit`, a leading `~`, `~/`, `$HOME`, or
+`$HOME/` is expanded when configuration loads:
 
-Permission patterns use simple wildcard matching:
+```jsonc
+{ "action": "read", "resource": "$HOME/reference/*", "effect": "allow" }
+```
 
-- `*` matches zero or more of any character
-- `?` matches exactly one character
-- All other characters match literally
+Shell resources remain raw command text and are not home-expanded.
 
-### Home Directory Expansion
+<Callout type="warning">
+  `shell` runs with the host user's filesystem, process, and network authority. Directory inference from command text is
+  best effort, so prefer a narrow shell allowlist instead of patterns intended to recognize every dangerous command.
+</Callout>
 
-You can use `~` or `$HOME` at the start of a pattern to reference your home directory. This is particularly useful for [`external_directory`](#external-directories) rules.
+Relative mutation paths may leave the active Location while remaining inside
+its project worktree. Explicit external paths are canonicalized before matching,
+so authorize only trusted directory boundaries.
 
-- `~/projects/*` -> `/Users/username/projects/*`
-- `$HOME/projects/*` -> `/Users/username/projects/*`
-- `~` -> `/Users/username`
+## Scanner
 
-### External Directories
+Enable the experimental portable shell scanner with the following setting. Like all
+[experimental settings](/config#experimental), it may change or be removed in a future release.
 
-Use `external_directory` to allow tool calls that touch paths outside the working directory where OpenCode was started. This applies to any tool that takes a path as input (for example `read`, `edit`, `glob`, `grep`, and many `bash` commands).
-
-Home expansion (like `~/...`) only affects how a pattern is written. It does not make an external path part of the current workspace, so paths outside the working directory must still be allowed via `external_directory`.
-
-For example, this allows access to everything under `~/projects/personal/`:
-
-```json title="opencode.json"
+```jsonc
 {
   "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "external_directory": {
-      "~/projects/personal/**": "allow"
-    }
-  }
+  "experimental": {
+    "portable_shell_scanner": true,
+  },
 }
 ```
 
-Any directory allowed here inherits the same defaults as the current workspace. Since [`read` defaults to `allow`](#defaults), reads are also allowed for entries under `external_directory` unless overridden. Add explicit rules when a tool should be restricted in these paths, such as blocking edits while keeping reads:
+The portable scanner replaces the default tree-sitter scanner; tree-sitter is
+not a fallback or second opinion. A command the portable scanner cannot analyze
+returns a scanner error, not a permission denial.
 
-```json title="opencode.json"
-{
-  "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "external_directory": {
-      "~/projects/personal/**": "allow"
-    },
-    "edit": {
-      "~/projects/personal/**": "deny"
-    }
-  }
-}
-```
-
-Keep the list focused on trusted paths, and layer extra allow or deny rules as needed for other tools (for example `bash`).
-
----
-
-## Available Permissions
-
-OpenCode permissions are keyed by tool name, plus a couple of safety guards:
-
-- `read` — reading a file (matches the file path)
-- `edit` — all file modifications (covers `edit`, `write`, `patch`)
-- `glob` — file globbing (matches the glob pattern)
-- `grep` — content search (matches the regex pattern)
-- `bash` — running shell commands (matches parsed commands like `git status --porcelain`)
-- `task` — launching subagents (matches the subagent type)
-- `skill` — loading a skill (matches the skill name)
-- `lsp` — running LSP queries (currently non-granular)
-- `question` — asking the user questions during execution
-- `webfetch` — fetching a URL (matches the URL)
-- `websearch` — web search (matches the query)
-- `external_directory` — triggered when a tool touches paths outside the project working directory
-- `doom_loop` — triggered when the same tool call repeats 3 times with identical input
-
----
+The flag changes only parser selection. Existing permission rules, saved
+approval patterns, and best-effort directory inference still apply. There is no
+extra approval mode or blanket restriction for unknown directories.
 
 ## Defaults
 
-If you don’t specify anything, OpenCode starts from permissive defaults:
+Every agent, including custom agents, starts with this ordered base policy:
 
-- Most permissions default to `"allow"`.
-- `doom_loop` and `external_directory` default to `"ask"`.
-- `read` is `"allow"`, but `.env` files are denied by default:
-
-```json title="opencode.json"
-{
-  "permission": {
-    "read": {
-      "*": "allow",
-      "*.env": "deny",
-      "*.env.*": "deny",
-      "*.env.example": "allow"
-    }
-  }
-}
+```jsonc
+[
+  { "action": "*", "resource": "*", "effect": "allow" },
+  { "action": "read", "resource": "*.env", "effect": "ask" },
+  { "action": "read", "resource": "*.env.*", "effect": "ask" },
+  { "action": "read", "resource": "*.env.example", "effect": "allow" },
+]
 ```
 
----
+Shipped agents append these policies:
 
-## What “Ask” Does
+| Agent        | Additional policy                                                              |
+| ------------ | ------------------------------------------------------------------------------ |
+| `build`      | Allows questions                                                               |
+| `plan`       | Allows questions; denies edits except files under `~/.opencode/plan`           |
+| `general`    | Denies questions and launching subagents                                       |
+| `explore`    | Denies everything except shell, reads, globs, grep, web fetches, web searches, and external directories; asks for `.env` reads |
+| `title`      | Denies all actions                                                              |
+| `summary`    | Denies all actions                                                              |
+| `compaction` | Keeps the base policy                                                          |
 
-When OpenCode prompts for approval, the UI offers three outcomes:
-
-- `once` — approve just this request
-- `always` — approve future requests matching the suggested patterns (for the rest of the current OpenCode session)
-- `reject` — deny the request
-
-The set of patterns that `always` would approve is provided by the tool (for example, bash approvals typically whitelist a safe command prefix like `git status*`).
-
----
+Because no default rule asks for `external_directory`, reads and edits outside
+the Location and worktree proceed without a prompt. Add an
+`external_directory` `ask` or `deny` rule, as shown in
+[Directories](#directories), to restore a prompt or block outside access.
+Later global and agent rules override these defaults.
 
 ## Agents
 
-You can override permissions per agent. Agent permissions are merged with the global config, and agent rules take precedence. [Learn more](/docs/agents#permissions) about agent permissions.
+Put shared rules at the top level and narrower rules under
+`agents.<id>.permissions`:
 
-:::note
-Refer to the [Granular Rules (Object Syntax)](#granular-rules-object-syntax) section above for more detailed pattern matching examples.
-:::
-
-```json title="opencode.json"
+```jsonc
 {
   "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "bash": {
-      "*": "ask",
-      "git *": "allow",
-      "git commit *": "deny",
-      "git push *": "deny",
-      "grep *": "allow"
-    }
+  "permissions": [
+    { "action": "shell", "resource": "*", "effect": "ask" },
+    { "action": "shell", "resource": "git status *", "effect": "allow" },
+  ],
+  "agents": {
+    "reviewer": {
+      "description": "Review code without changing it",
+      "mode": "subagent",
+      "permissions": [
+        { "action": "edit", "resource": "*", "effect": "deny" },
+      ],
+    },
   },
-  "agent": {
-    "build": {
-      "permission": {
-        "bash": {
-          "*": "ask",
-          "git *": "allow",
-          "git commit *": "ask",
-          "git push *": "deny",
-          "grep *": "allow"
-        }
-      }
-    }
-  }
 }
 ```
 
-You can also configure agent permissions in Markdown:
+Agent rules are appended after global rules; they do not replace the global
+array. A custom subagent uses its own permissions, not a subset of its parent's
+permissions.
 
-```markdown title="~/.config/opencode/agents/review.md"
----
-description: Code review without edits
-mode: subagent
-permission:
-  edit: deny
-  bash: ask
-  webfetch: deny
----
+## Approvals
 
-Only analyze code and suggest changes.
+When a rule resolves to `ask`, clients can reply with:
+
+| Choice       | Reply      | Result                                                               |
+| ------------ | ---------- | -------------------------------------------------------------------- |
+| Allow once   | `once`     | Approve only the pending request                                     |
+| Allow always | `always`   | Approve it and save the tool's proposed patterns for the project     |
+| Reject       | `reject`   | Reject it and every other pending permission request in that session |
+
+For example, choosing **Allow always** for `git status --short` may save a
+shell prefix that covers later `git status` commands:
+
+```text
+shell: git status * → allow
 ```
 
-:::tip
-Use pattern matching for commands with arguments. `"grep *"` allows `grep pattern file.txt`, while `"grep"` alone would block it. Commands like `git status` work for default behavior but require explicit permission (like `"git status *"`) when arguments are passed.
-:::
+Saved approvals are durable, project-scoped `allow` rules. They never override
+a configured `deny`. Tools choose the proposed saved pattern: some propose `*`,
+shell proposes command prefixes, and skills and subagents propose their IDs.
+Review broad approvals and remove those no longer needed.
+
+Clients may attach feedback when rejecting. Non-interactive clients must decide
+how to handle approval requests; configured `deny` rules always remain enforced.
+
+## Policies
+
+A [policy](/policies) can hard-deny a permission check after these rules and saved
+approvals run. It turns `allow` or `ask` into `deny` and never grants access.
+
+```jsonc
+{
+  "policies": [{ "action": "tool.use", "resource": "shell:sudo *", "effect": "deny" }],
+}
+```
+
+Global and Console-managed policies override project configuration, which is how an
+organization blocks a command that a repository would allow.

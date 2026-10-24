@@ -1,52 +1,101 @@
-OpenCode supports standard proxy environment variables and custom certificates for enterprise network environments.
+# Network
 
----
-
-## Proxy
-
-OpenCode respects standard proxy environment variables.
+Set the standard proxy variables and exclude loopback addresses. OpenCode uses local HTTP connections between the CLI and
+its background service, so the loopback exclusion is required when a proxy is configured in the CLI environment.
 
 ```bash
-# HTTPS proxy (recommended)
-export HTTPS_PROXY=https://proxy.example.com:8080
-
-# HTTP proxy (if HTTPS not available)
 export HTTP_PROXY=http://proxy.example.com:8080
+export HTTPS_PROXY=http://proxy.example.com:8080
+export NO_PROXY=localhost,127.0.0.1,::1
 
-# Bypass proxy for local server (required)
-export NO_PROXY=localhost,127.0.0.1
+opencode
 ```
 
-:::caution
-The TUI communicates with a local HTTP server. You must bypass the proxy for this connection to prevent routing loops.
-:::
+`HTTP_PROXY` handles HTTP destinations and `HTTPS_PROXY` handles HTTPS destinations. The proxy URL itself can use `http://`
+for both variables. `NO_PROXY` is a comma-separated list of hosts and addresses that connect directly.
 
-You can configure the server's port and hostname using [CLI flags](/docs/cli#run).
+## Service
 
----
-
-### Authenticate
-
-If your proxy requires basic authentication, include credentials in the URL.
+Shell exports affect a background service only when that service starts from the shell. Persist the variables in the managed
+service configuration so later service starts use the same network settings.
 
 ```bash
-export HTTPS_PROXY=http://username:password@proxy.example.com:8080
+opencode service set env HTTP_PROXY http://proxy.example.com:8080
+opencode service set env HTTPS_PROXY http://proxy.example.com:8080
+opencode service set env NO_PROXY localhost,127.0.0.1,::1
+opencode service start
 ```
 
-:::caution
-Avoid hardcoding passwords. Use environment variables or secure credential storage.
-:::
+Changing a managed environment variable stops the running service. `service start` starts it again with the new environment.
+Keep `NO_PROXY` in the CLI shell too when that shell sets a proxy, because managed service variables apply to the server
+process, not the CLI process.
 
-For proxies requiring advanced authentication like NTLM or Kerberos, consider using an LLM Gateway that supports your authentication method.
-
----
-
-## Custom certificates
-
-If your enterprise uses custom CAs for HTTPS connections, configure OpenCode to trust them.
+Remove a persisted variable with `service unset env`:
 
 ```bash
-export NODE_EXTRA_CA_CERTS=/path/to/ca-cert.pem
+opencode service unset env HTTPS_PROXY
 ```
 
-This works for both proxy connections and direct API access.
+## Authentication
+
+For a proxy that accepts URL credentials, include the username and password in each proxy URL that needs authentication.
+Percent-encode characters such as `@`, `:`, and `/` inside either credential.
+
+```bash
+export HTTPS_PROXY='http://user:p%40ssword@proxy.example.com:8080'
+```
+
+For the background service, persist the complete URL. The value is stored in the private service configuration and is
+shown by `opencode service get env`, so do not share that output.
+
+```bash
+opencode service set env HTTPS_PROXY 'http://user:p%40ssword@proxy.example.com:8080'
+```
+
+## Certificates
+
+Set `NODE_EXTRA_CA_CERTS` to a PEM file when the proxy or destination uses a certificate signed by a private certificate
+authority. The extra authorities are added to the runtime trust store when the process starts.
+
+```bash
+export NODE_EXTRA_CA_CERTS=/etc/company/ca.pem
+opencode --standalone
+```
+
+Persist the file path for the background service, then restart it:
+
+```bash
+opencode service set env NODE_EXTRA_CA_CERTS /etc/company/ca.pem
+opencode service start
+```
+
+## Foreground
+
+`--standalone` and `serve` use the environment of their own process. `opencode service set env` does not configure these
+processes.
+
+```bash
+HTTP_PROXY=http://proxy.example.com:8080 \
+HTTPS_PROXY=http://proxy.example.com:8080 \
+NO_PROXY=localhost,127.0.0.1,::1 \
+opencode --standalone
+```
+
+Apply the same pattern to a foreground server:
+
+```bash
+HTTPS_PROXY=http://proxy.example.com:8080 \
+NO_PROXY=localhost,127.0.0.1,::1 \
+opencode serve
+```
+
+## Verify
+
+Check that the CLI can reach the background service after applying the settings:
+
+```bash
+opencode api get /api/info
+```
+
+A successful health response verifies the local client-to-service connection. Run a normal provider request to verify the
+service's outbound proxy and certificate path.

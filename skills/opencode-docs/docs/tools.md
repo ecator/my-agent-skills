@@ -1,340 +1,287 @@
-Tools allow the LLM to perform actions in your codebase. OpenCode comes with a set of built-in tools, but you can extend it with [custom tools](/docs/custom-tools) or [MCP servers](/docs/mcp-servers).
+# Tools
 
-By default, all tools are **enabled** and don't need permission to run. You can control tool behavior through [permissions](/docs/permissions).
+Ask for the outcome you want. OpenCode chooses the available tools, requests
+approval when required, and returns the result.
 
----
-
-## Configure
-
-Use the `permission` field to control tool behavior. You can allow, deny, or require approval for each tool.
-
-```json title="opencode.json"
-{
-  "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "edit": "deny",
-    "bash": "ask",
-    "webfetch": "allow"
-  }
-}
+```text
+Find where request timeouts are configured, change the default to 30 seconds,
+and run the relevant existing tests.
 ```
 
-You can also use wildcards to control multiple tools at once. For example, to require approval for all tools from an MCP server:
+This task typically uses `grep` or `glob`, `read`, an editing tool, and `shell`.
+You can also name a tool when you want a specific approach.
 
-```json title="opencode.json"
-{
-  "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "mymcp_*": "ask"
-  }
-}
+```text
+Use grep to find every reference to DEFAULT_TIMEOUT, then read the matching files.
 ```
 
-[Learn more](/docs/permissions) about configuring permissions.
+## Files
 
----
+### Read
 
-## Built-in
+`read` returns a file or a non-recursive directory listing. Give it a `path`;
+use `offset` and `limit` to page through large results.
 
-Here are all the built-in tools available in OpenCode.
-
----
-
-### bash
-
-Execute shell commands in your project environment.
-
-```json title="opencode.json" {4}
-{
-  "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "bash": "allow"
-  }
-}
+```text
+Read src/server.ts starting at line 120 and return at most 80 lines.
 ```
 
-This tool allows the LLM to run terminal commands like `npm install`, `git status`, or any other shell command.
+Text reads contain numbered lines and are limited to 2,000 lines and 50 KiB per
+page. Individual lines are shortened after 2,000 characters. The tool also
+passes PNG, JPEG, GIF, WebP, and PDF files to the model, up to 20 MiB of source
+data. Other binary files fail. See [Attachments](/attachments) for supported
+media and image processing.
 
----
+Permission: `read` with the normalized path as its resource.
 
-### edit
+### Glob
 
-Modify existing files using exact string replacements.
+`glob` finds file paths from a pattern such as `**/*.ts`. It searches the
+current directory unless `path` selects another relative directory; `hidden`
+includes hidden entries and `limit` caps the results.
 
-```json title="opencode.json" {4}
-{
-  "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "edit": "allow"
-  }
-}
+```text
+Use glob with **/*.test.ts under packages/core and return at most 50 files.
 ```
 
-This tool performs precise edits to files by replacing exact text matches. It's the primary way the LLM modifies code.
+The default limit is 100 files and the search timeout is 30 seconds.
+Permission: `glob` with the requested pattern as its resource.
 
----
+### Grep
 
-### write
+`grep` searches file contents and returns paths, line numbers, and previews.
+Its `pattern` uses regular-expression syntax unless `literal` is true. Narrow a
+search with `path`, `include`, `caseSensitive`, or `limit`.
 
-Create new files or overwrite existing ones.
-
-```json title="opencode.json" {4}
-{
-  "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "edit": "allow"
-  }
-}
+```text
+Use grep for the literal text "request timed out" in src, including only *.ts files.
 ```
 
-Use this to allow the LLM to create new files. It will overwrite existing files if they already exist.
+The default limit is 100 matching lines and the search timeout is 30 seconds.
+Permission: `grep` with the requested pattern, not the search path, as its
+resource.
 
-:::note
-The `write` tool is controlled by the `edit` permission, which covers all file modifications (`edit`, `write`, `apply_patch`).
-:::
+### Edit
 
----
+`edit` replaces text in an existing file. Supply `path`, `oldString`, and a
+different `newString`; the old text must match exactly once unless `replaceAll`
+is true.
 
-### read
-
-Read file contents from your codebase.
-
-```json title="opencode.json" {4}
-{
-  "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "read": "allow"
-  }
-}
+```text
+In src/config.ts, replace the unique text "timeout: 60" with "timeout: 30".
 ```
 
-This tool reads files and returns their contents. It supports reading specific line ranges for large files.
+Use `edit` for a focused change. OpenCode may format the file after writing it.
+Permission: `edit` with the target path as its resource.
 
----
+### Write
 
-### grep
+`write` creates or completely replaces a text file from `path` and `content`.
+It creates missing parent directories and may run the configured formatter.
 
-Search file contents using regular expressions.
-
-```json title="opencode.json" {4}
-{
-  "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "grep": "allow"
-  }
-}
+```text
+Create docs/example.md with a heading and one setup command.
 ```
 
-Fast content search across your codebase. Supports full regex syntax and file pattern filtering.
+Use `edit` instead when only part of an existing file should change.
+Permission: `edit` with the target path as its resource.
 
----
+### Patch
 
-### glob
+`patch` applies one patch that can add, update, move, or delete several files.
+Its `patchText` uses `*** Add File`, `*** Update File`, and `*** Delete File`
+sections.
 
-Find files by pattern matching.
-
-```json title="opencode.json" {4}
-{
-  "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "glob": "allow"
-  }
-}
+```text
+Use patch to rename src/old.ts to src/new.ts and update its exported name.
 ```
 
-Search for files using glob patterns like `**/*.js` or `src/**/*.ts`. Returns matching file paths sorted by modification time.
+OpenCode exposes `patch` for supported GPT models; other models receive `edit`
+and `write` instead. Permission: `edit` with every affected path as a resource.
 
----
+Paths outside the active Location or its project worktree are also checked
+against `external_directory`, which is allowed by default. See
+[Permissions](/permissions) for path normalization, rule order, and saved
+approvals. To make outside material
+available by name, configure [References](/references).
 
-### lsp (experimental)
+## Commands
 
-Interact with your configured LSP servers to get code intelligence features like definitions, references, hover info, and call hierarchy.
+### Shell
 
-:::note
-This tool is only available when `OPENCODE_EXPERIMENTAL_LSP_TOOL=true` (or `OPENCODE_EXPERIMENTAL=true`).
-:::
+`shell` executes a command in the host user's shell. Set `workdir` instead of
+putting `cd` in the command, and set `timeout` in milliseconds when the default
+two-minute foreground timeout is not suitable.
 
-```json title="opencode.json" {4}
-{
-  "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "lsp": "allow"
-  }
-}
+```text
+Run bun test from packages/core with a five-minute timeout.
 ```
 
-Supported operations include `goToDefinition`, `findReferences`, `hover`, `documentSymbol`, `workspaceSymbol`, `goToImplementation`, `prepareCallHierarchy`, `incomingCalls`, and `outgoingCalls`.
+Set `background` to true for a dev server or another long-running process.
+Background calls return immediately and notify the session when they finish;
+they have no timeout unless one is supplied. Large output is shortened and the
+complete output is retained in a managed file.
 
-To configure which LSP servers are available for your project, see [LSP Servers](/docs/lsp).
+Permission: `shell` with each scanner-produced command as a resource. The
+scanner also checks an external working directory and directories it can infer
+from the command. Shell has the host user's filesystem, process, and network
+authority, so use narrow rules in [Permissions](/permissions).
 
----
+## Web
 
-### apply_patch
+### Webfetch
 
-Apply patches to files.
+`webfetch` retrieves one HTTP or HTTPS URL as `markdown`, `text`, or `html`.
+Markdown is the default; `timeout` accepts up to 120 seconds.
 
-```json title="opencode.json" {4}
-{
-  "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "edit": "allow"
-  }
-}
+```text
+Fetch https://example.com/docs as markdown.
 ```
 
-This tool applies patch files to your codebase. Useful for applying diffs and patches from various sources.
+It accepts textual responses such as HTML, plain text, JSON, and XML, but not
+images or other binary downloads. Large output can be shortened while the full
+text is retained in managed storage. Permission: `webfetch` with the requested
+URL as its resource.
 
-When handling `tool.execute.before` or `tool.execute.after` hooks, check `input.tool === "apply_patch"` (not `"patch"`).
+### Websearch
 
-`apply_patch` uses `output.args.patchText` instead of `output.args.filePath`. Paths are embedded in marker lines within `patchText` and are relative to the project root (for example: `*** Add File: src/new-file.ts`, `*** Update File: src/existing.ts`, `*** Move to: src/renamed.ts`, `*** Delete File: src/obsolete.ts`).
+`websearch` searches the selected integration for current information. Its
+input is a search `query`.
 
-:::note
-The `apply_patch` tool is controlled by the `edit` permission, which covers all file modifications (`edit`, `write`, `apply_patch`).
-:::
-
----
-
-### skill
-
-Load a [skill](/docs/skills) (a `SKILL.md` file) and return its content in the conversation.
-
-```json title="opencode.json" {4}
-{
-  "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "skill": "allow"
-  }
-}
+```text
+Search the web for the latest Bun release notes.
 ```
 
----
+Permission: `websearch` with the query as its resource. See [Websearch](/websearch)
+for providers, selection, rate limits, and disabling the tool.
 
-### todowrite
+## Interaction
 
-Manage todo lists during coding sessions.
+### Question
 
-```json title="opencode.json" {4}
-{
-  "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "todowrite": "allow"
-  }
-}
+`question` pauses execution and presents one or more questions to the user.
+Each question has a short header, prompt, and choices; `multiple` allows more
+than one choice. A free-form answer is always available.
+
+```text
+Before changing the API, ask me to choose between a breaking change and a compatibility layer.
 ```
 
-Creates and updates task lists to track progress during complex operations. The LLM uses this to organize multi-step tasks.
+Permission: `question` with `*` as its resource. A client must support the
+interactive form, and dismissing it cancels the question.
 
-:::note
-This tool is disabled for subagents by default, but you can enable it manually. [Learn more](/docs/agents/#permissions)
-:::
+### Skill
 
----
+`skill` loads the instructions and bundled resources for one available skill
+ID into the conversation.
 
-### webfetch
-
-Fetch web content.
-
-```json title="opencode.json" {4}
-{
-  "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "webfetch": "allow"
-  }
-}
+```text
+Load the effect skill before changing this Effect code.
 ```
 
-Allows the LLM to fetch and read web pages. Useful for looking up documentation or researching online resources.
+The ID must be in the advertised skill list or explicitly named by the user.
+Permission: `skill` with the skill ID as its resource. See [Skills](/skills) for
+creation, discovery, and loading rules.
 
----
+## Automation
 
-### websearch
+### Subagent
 
-Search the web for information.
+`subagent` starts a child session with a configured subagent. Supply the agent
+ID, a short `description`, and a complete `prompt`.
 
-:::note
-This tool is only available when using the OpenCode provider or when the `OPENCODE_ENABLE_EXA` environment variable is set to any truthy value (e.g., `true` or `1`).
-
-To enable when launching OpenCode:
-
-```bash
-OPENCODE_ENABLE_EXA=1 opencode
+```text
+Ask the explore subagent to map the authentication flow and return the key files.
 ```
 
-:::
+Foreground calls wait for the result. `background: true` returns immediately
+and notifies the parent when the child finishes. Pass the returned `sessionID`
+to continue that same child conversation. Only subagent-mode agents can be
+used, and the default nesting depth is one.
 
-```json title="opencode.json" {4}
-{
-  "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "websearch": "allow"
-  }
-}
+Permission: `subagent` with the selected agent ID as its resource.
+
+### Execute
+
+`execute` runs JavaScript in Code Mode so the agent can call and combine tools
+from the catalog. It is useful for parallel independent calls and for processing
+results without adding every intermediate value to the model context.
+
+```text
+Read package.json and README.md in parallel, then return their relevant setup details.
 ```
 
-Performs web searches using Exa AI to find relevant information online. Useful for researching topics, finding current events, or gathering information beyond the training data cutoff.
+The runtime has no direct filesystem access, imports, or timers. It provides
+`fetch` for HTTP requests; everything else goes through tools in its catalog.
+Denying `execute` with resource `*` removes Code Mode and every tool reached only
+through it, including MCP tools from servers that do not set `codemode: false`.
+Nested built-in and MCP tools still enforce their own permissions, and plugin
+tools enforce the permissions they assert.
 
-No API key is required — the tool connects directly to Exa AI's hosted MCP service without authentication.
+### Sessions
 
-:::tip
-Use `websearch` when you need to find information (discovery), and `webfetch` when you need to retrieve content from a specific URL (retrieval).
-:::
+The `opencode` Code Mode namespace contains session utilities:
 
----
+- `session_rename` changes the title of the current session, or another session
+  selected by `sessionID`.
+- `session_move` moves the current session, or another selected session, to a
+  relative or absolute `directory`. The move takes effect at a safe boundary,
+  so destination-dependent work belongs in a later call.
 
-### question
-
-Ask the user questions during execution.
-
-```json title="opencode.json" {4}
-{
-  "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "question": "allow"
-  }
-}
+```text
+Rename this session to "Timeout cleanup", then move it to the new worktree.
 ```
 
-This tool allows the LLM to ask the user questions during a task. It's useful for:
+These utilities do not request a built-in permission action.
 
-- Gathering user preferences or requirements
-- Clarifying ambiguous instructions
-- Getting decisions on implementation choices
-- Offering choices about what direction to take
+### Worktrees
 
-Each question includes a header, the question text, and a list of options. Users can select from the provided options or type a custom answer. When there are multiple questions, users can navigate between them before submitting all answers.
+The same namespace manages worktrees for the session's project:
 
----
+- `worktree_create` creates a worktree from a `name` and returns its
+  `directory`. The project's worktree configuration selects the destination and
+  strategy.
+- `worktree_list` lists the project's worktrees.
+- `worktree_remove` removes a worktree OpenCode recorded for the project. Set
+  `force` to discard uncommitted changes.
 
-## Custom tools
-
-Custom tools let you define your own functions that the LLM can call. These are defined in your config file and can execute arbitrary code.
-
-[Learn more](/docs/custom-tools) about creating custom tools.
-
----
-
-## MCP servers
-
-MCP (Model Context Protocol) servers allow you to integrate external tools and services. This includes database access, API integrations, and third-party services.
-
-[Learn more](/docs/mcp-servers) about configuring MCP servers.
-
----
-
-## Internals
-
-Internally, tools like `grep` and `glob` use [ripgrep](https://github.com/BurntSushi/ripgrep) under the hood. By default, ripgrep respects `.gitignore` patterns, which means files and directories listed in your `.gitignore` will be excluded from searches and listings.
-
----
-
-### Ignore patterns
-
-To include files that would normally be ignored, create a `.ignore` file in your project root. This file can explicitly allow certain paths.
-
-```text title=".ignore"
-!node_modules/
-!dist/
-!build/
+```text
+Create a worktree named "login" and move this session into it.
 ```
 
-For example, this `.ignore` file allows ripgrep to search within `node_modules/`, `dist/`, and `build/` directories even if they're listed in `.gitignore`.
+`worktree_remove` uses the `edit` permission with the worktree directory as its
+resource. The other worktree utilities do not request a built-in permission
+action.
+
+## Browser
+
+The `browser` Code Mode namespace controls the browser attached by the OpenCode
+desktop app. Open a tab, keep its returned `tabID`, then pass that explicit ID to
+every page operation.
+
+```text
+Open https://example.com, take a snapshot of that tab, and report the main heading.
+```
+
+The namespace includes tab and navigation commands, page snapshots and search,
+clicking and form input, screenshots, file transfer, console and network
+inspection, performance traces, heap inspection, and Lighthouse audits.
+Screenshots require a focused visible tab. Upload paths are server-local;
+captures return server-local paths, and each file transfer is limited to 5 MiB.
+
+Page content, logs, headers, and response bodies are untrusted data, not agent
+instructions. A `browser` deny rule with resource `*` removes the browser catalog;
+browser operations do not issue individual permission prompts.
+
+## Extensions
+
+[MCP servers](/mcp-servers) add tools whose names and inputs come from each
+connected server. Their permission action is `<server>_<tool>` with resource
+`*`. They are not a fixed part of the built-in catalog. By default, agents reach
+them through `execute` under the server's namespace; set `codemode: false` on a
+server to list its tools directly.
+
+[Skills](/skills) add task instructions rather than new executable tools.
+[Attachments](/attachments) put user-selected content into a prompt, while
+[References](/references) provide named outside directories. These features
+complement tools without bypassing their permission checks.

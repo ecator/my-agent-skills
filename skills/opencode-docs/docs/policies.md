@@ -1,132 +1,235 @@
-Policies control whether OpenCode may perform an action on a named resource. This feature is experimental and is configured with the `experimental.policies` array in `opencode.json`.
+# Policies
 
-Policies are separate from [permissions](/docs/permissions). Permissions control what tools can do during a session, while policies control whether OpenCode may use a resource such as an LLM provider.
+Policies decide whether OpenCode may perform an action on a named resource. They are
+authored under `policies` and can also be delivered by a connected
+[OpenCode Console](/console) workspace.
 
----
+Policies are separate from [permissions](/permissions). Permissions are per-agent tool
+rules that can `allow`, `deny`, or `ask`. Policies are binary, never prompt, and only
+ever tighten what permissions and providers would otherwise allow.
 
-## Configuration
+## Configure
 
-Each policy statement has three fields:
+Deny one provider everywhere by adding a statement to `opencode.jsonc`:
 
-- `effect` - Either `"allow"` or `"deny"`.
-- `action` - The operation being controlled.
-- `resource` - The resource ID or wildcard pattern the statement applies to.
-
-For example, deny use of the `openai` provider:
-
-```json title="opencode.json"
+```jsonc
 {
   "$schema": "https://opencode.ai/config.json",
-  "experimental": {
-    "policies": [
-      {
-        "effect": "deny",
-        "action": "provider.use",
-        "resource": "openai"
-      }
-    ]
-  }
+  "policies": [{ "action": "provider.use", "resource": "openai", "effect": "deny" }],
 }
 ```
 
-A provider denied by policy is not available for model selection or model use, even if it has credentials or is otherwise configured correctly.
+A denied provider disappears from the catalog and model selection even when it has
+valid credentials.
 
----
+Earlier releases read policies from `experimental.policies`. That key still works and
+merges into `policies`:
 
-## Available Policies
+```jsonc
+{
+  "experimental": {
+    "policies": [{ "action": "provider.use", "resource": "openai", "effect": "deny" }],
+  },
+}
+```
 
-OpenCode currently supports one policy action:
+## Statements
 
-| Action         | Resource                      | Description                           |
-| -------------- | ----------------------------- | ------------------------------------- |
-| `provider.use` | Provider ID, such as `openai` | Allow or deny use of an LLM provider. |
+Each statement has three fields:
 
-More policy actions may be added in the future.
+| Field      | Values                                        | Meaning                                              |
+| ---------- | --------------------------------------------- | ---------------------------------------------------- |
+| `action`   | `provider.use`, `tool.use`, `integration.use` | The operation being controlled                       |
+| `resource` | string or wildcard pattern                    | What the statement applies to; depends on the action |
+| `effect`   | `allow`, `deny`                               | The decision when this statement matches             |
 
----
+Statements that fail validation are dropped with a warning in the server log and
+the rest of the list still applies. Check the log after editing a `deny`.
 
 ## Matching
 
-The `resource` field supports wildcard matching. Use `*` to match zero or more characters and `?` to match one character.
+Resources use the same whole-value wildcards as permissions: `*` matches zero or
+more characters and `?` matches one.
 
-```json title="opencode.json"
+```jsonc
 {
-  "$schema": "https://opencode.ai/config.json",
-  "experimental": {
-    "policies": [
-      {
-        "effect": "deny",
-        "action": "provider.use",
-        "resource": "company-*"
-      }
-    ]
-  }
+  "policies": [{ "action": "provider.use", "resource": "company-*", "effect": "deny" }],
 }
 ```
 
-This denies providers such as `company-us` and `company-eu`.
+This denies `company-us` and `company-eu`. A pattern ending in ` *` also matches the
+value without arguments, so `shell:git push *` covers `git push` on its own.
 
----
+## Order
 
-## Rule Order
+When several statements match, the last one wins. There is no specificity rule, so
+put broad statements first and exceptions after them. If nothing matches, the
+action is allowed.
 
-When multiple statements match, the last matching statement wins. Put broad rules first, then more specific exceptions after them.
-
-For example, allow only Anthropic:
-
-```json title="opencode.json"
+```jsonc
 {
-  "$schema": "https://opencode.ai/config.json",
-  "experimental": {
-    "policies": [
-      {
-        "effect": "deny",
-        "action": "provider.use",
-        "resource": "*"
-      },
-      {
-        "effect": "allow",
-        "action": "provider.use",
-        "resource": "anthropic"
-      }
-    ]
-  }
+  "policies": [
+    { "action": "provider.use", "resource": "*", "effect": "deny" },
+    { "action": "provider.use", "resource": "anthropic", "effect": "allow" },
+  ],
 }
 ```
 
-If no policy matches a provider, provider use is allowed by default.
+Only Anthropic remains available.
 
-Policies may be set in both your global config and project config. If policies from both locations match the same provider, your global policy takes priority over the project policy. This prevents a repository from re-enabling a provider that you deny globally.
+## Providers
 
----
+`provider.use` controls whether a provider is usable at all. The resource is the
+provider ID: `anthropic`, `openai`, `opencode`, or a custom ID from
+[`providers`](/providers).
 
-## Provider Lists
-
-Use policies instead of the older `disabled_providers` and `enabled_providers` settings when controlling provider access.
-
-To replace `disabled_providers`:
-
-```json title="opencode.json"
+```jsonc
 {
-  "experimental": {
-    "policies": [
-      { "effect": "deny", "action": "provider.use", "resource": "openai" },
-      { "effect": "deny", "action": "provider.use", "resource": "google" }
-    ]
-  }
+  "providers": {
+    "company-ai": {
+      "package": "@opencode/ai/providers/openai-compatible",
+      "settings": { "baseURL": "https://ai.company.example/v1" },
+    },
+  },
+  "policies": [
+    { "action": "provider.use", "resource": "*", "effect": "deny" },
+    { "action": "provider.use", "resource": "company-ai", "effect": "allow" },
+  ],
 }
 ```
 
-To replace `enabled_providers`, deny all providers first and allow the selected providers after it:
+The `providers` entry configures the endpoint; the statements make it the only
+provider OpenCode will use. Policy applies however a provider became known: catalog
+data, environment variables, saved accounts, built-in plugins, or configuration.
 
-```json title="opencode.json"
+Use `provider.use` instead of the V1 `enabled_providers` and `disabled_providers`
+lists. V1 files still load; see
+[Migrate from V1](/migrate-v1#supported-fields-without-direct-native-equivalents).
+
+## Tools
+
+`tool.use` statements hard-deny a [permission](/permissions) check. The resource is
+`<action>:<value>`, matched against every resource the tool checks.
+
+```jsonc
 {
-  "experimental": {
-    "policies": [
-      { "effect": "deny", "action": "provider.use", "resource": "*" },
-      { "effect": "allow", "action": "provider.use", "resource": "anthropic" },
-      { "effect": "allow", "action": "provider.use", "resource": "openai" }
-    ]
-  }
+  "policies": [
+    { "action": "tool.use", "resource": "shell:git push *", "effect": "deny" },
+    { "action": "tool.use", "resource": "edit:*.env", "effect": "deny" },
+    { "action": "tool.use", "resource": "webfetch:*", "effect": "deny" },
+  ],
 }
 ```
+
+A denied check fails with `Blocked by configuration policy` instead of prompting. It
+applies after agent rules and saved approvals, so it overrides an `ask` and an
+"Allow always" approval alike.
+
+| Pattern                      | Blocks                                      |
+| ---------------------------- | ------------------------------------------- |
+| `shell:*`                    | Every shell command                         |
+| `read:*/.ssh/*`              | Reading SSH material                        |
+| `external_directory:*`       | Any access outside the Location or worktree |
+| `subagent:general`           | Launching one subagent                      |
+| `github_delete_repository:*` | One MCP tool                                |
+| `*`                          | Everything not already denied               |
+
+A `tool.use` statement with `allow` never grants access. It only lifts an earlier
+broader `deny`, after which the agent's own rules decide.
+
+```jsonc
+{
+  "policies": [
+    { "action": "tool.use", "resource": "shell:*", "effect": "deny" },
+    { "action": "tool.use", "resource": "shell:git status *", "effect": "allow" },
+  ],
+}
+```
+
+`git status` falls back to the agent's `shell` rule; every other command is blocked.
+
+## Integrations
+
+`integration.use` controls whether an MCP server, skill, or plugin is loaded. The
+resource is the integration kind and its ID:
+
+| Resource          | Applies to                                                        |
+| ----------------- | ----------------------------------------------------------------- |
+| `mcp:<server>`    | An [MCP server](/mcp-servers) by its configured name              |
+| `skill:<id>`      | A [skill](/skills) by its ID                                      |
+| `plugin:<target>` | A [plugin](/plugins) by unversioned package name or absolute path |
+
+```jsonc
+{
+  "policies": [
+    { "action": "integration.use", "resource": "mcp:*", "effect": "deny" },
+    { "action": "integration.use", "resource": "mcp:github", "effect": "allow" },
+    { "action": "integration.use", "resource": "plugin:opencode-acme-cli", "effect": "deny" },
+  ],
+}
+```
+
+A denied MCP server or skill is removed, and a denied plugin is not loaded, however
+it was configured.
+
+## Precedence
+
+Ordinary settings let the nearest configuration win. Policies reverse that: statements
+from broader configuration are evaluated later, so they override narrower ones. Managed
+configuration and the connected Console always have the final say.
+
+| Authority   | Source                                                                                                         |
+| ----------- | -------------------------------------------------------------------------------------------------------------- |
+| 1 (highest) | Connected OpenCode Console workspace                                                                           |
+| 2           | macOS managed preferences (`/Library/Managed Preferences/ai.opencode.managed.plist`)                           |
+| 3           | System `opencode.json(c)` (`/Library/Application Support/opencode`, `/etc/opencode`, `%ProgramData%\opencode`) |
+| 4           | Global `~/.config/opencode/opencode.json(c)`                                                                   |
+| 5           | Direct `opencode.json(c)`; outer directories beat inner ones                                                   |
+| 6 (lowest)  | `.opencode/opencode.json(c)`; outer directories beat inner ones                                                |
+
+A repository cannot re-enable a provider you deny globally:
+
+```jsonc title="~/.config/opencode/opencode.jsonc"
+{
+  "policies": [{ "action": "provider.use", "resource": "openai", "effect": "deny" }],
+}
+```
+
+```jsonc title="project/opencode.jsonc"
+{
+  "policies": [{ "action": "provider.use", "resource": "openai", "effect": "allow" }],
+}
+```
+
+`openai` stays denied. Within one file, statements keep their written order.
+
+## Console
+
+A workspace on the [OpenCode Console](/console) compiles its Providers and Tools
+policies into statements and returns them with the workspace configuration. OpenCode
+appends them after every authored statement, so they have the final say: an
+organization `deny` cannot be lifted by a repository or user `allow`, and an
+organization `allow` lifts a lower-authority `deny`.
+
+Denials from these statements name the workspace:
+
+```text
+Blocked by Acme's policy
+```
+
+Statements follow the connected account.
+
+| Event                       | Result                                             |
+| --------------------------- | -------------------------------------------------- |
+| Console policy changes      | Applied on the next fetch, about once a minute     |
+| Switch to another workspace | Statements replaced with that workspace's          |
+| Disconnect                  | Statements cleared                                 |
+| Console unreachable         | Last statements for that connection stay in effect |
+
+The Console plugin and the policy plugin cannot be disabled from `plugins`; see
+[plugin control](/plugins#control).
+
+<Callout type="note">
+  Policies do not configure endpoints or credentials, and they cannot make an unusable provider usable. They also do not
+  sandbox plugin code: a denied provider is blocked on the normal provider and model path.
+</Callout>

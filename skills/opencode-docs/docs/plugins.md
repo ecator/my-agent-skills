@@ -1,384 +1,141 @@
-Plugins allow you to extend OpenCode by hooking into various events and customizing behavior. You can create plugins to add new features, integrate with external services, or modify OpenCode's default behavior.
+# Plugins
 
-For examples, check out the [plugins](/docs/ecosystem#plugins) created by the community.
+Add published packages, versioned packages, scoped packages, or local plugin directories to `opencode.json(c)`.
 
----
+## Configure
 
-## Use a plugin
-
-There are two ways to load plugins.
-
----
-
-### From local files
-
-Place JavaScript or TypeScript files in the plugin directory.
-
-- `.opencode/plugins/` - Project-level plugins
-- `~/.config/opencode/plugins/` - Global plugins
-
-Files in these directories are automatically loaded at startup.
-
----
-
-### From npm
-
-Specify npm packages in your config file.
-
-```json title="opencode.json"
+```jsonc title="opencode.jsonc"
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugin": ["opencode-helicone-session", "opencode-wakatime", "@my-org/custom-plugin"]
+  "plugins": [
+    "opencode-acme-plugin",
+    "opencode-acme-plugin@1.2.0",
+    "@acme/opencode-plugin",
+    "./plugins/local",
+    "../shared/plugin",
+    "/absolute/path/plugin",
+    "file:///home/me/plugins/local",
+    {
+      "package": "@acme/opencode-plugin",
+      "options": {
+        "agent": "reviewer",
+        "strict": true,
+      },
+    },
+  ],
 }
 ```
 
-Both regular and scoped npm packages are supported.
+Relative paths resolve from the config file containing the entry.
 
-Browse available plugins in the [ecosystem](/docs/ecosystem#plugins).
+Configured local paths must be directories. OpenCode loads the directory's `server` or `index` module, such as
+`index.ts`. A path to a single file is skipped.
 
----
+Plugin arrays from applicable config files are applied from lowest to highest precedence instead of replacing one another.
 
-### How plugins are installed
+```text
+~/.config/opencode/opencode.jsonc
+./opencode.jsonc
+./.opencode/opencode.jsonc
+```
 
-**npm plugins** are installed automatically using Bun at startup. Packages and their dependencies are cached in `~/.cache/opencode/node_modules/`.
+## Discover
 
-**Local plugins** are loaded directly from the plugin directory. To use external packages, you must create a `package.json` within your config directory (see [Dependencies](#dependencies)), or publish the plugin to npm and [add it to your config](/docs/config#plugins).
+OpenCode also loads direct `.ts` and `.js` files and immediate plugin package directories from every discovered
+`.opencode/plugins/` directory.
 
----
+```text
+.opencode/
+└── plugins/
+    ├── concise.ts
+    ├── reviewer.js
+    └── acme-package/
+```
 
-### Load order
+Global plugins use the same discovery layout under the OpenCode config directory.
 
-Plugins are loaded from all sources and all hooks run in sequence. The load order is:
+```text
+~/.config/opencode/plugins/
+```
 
-1. Global config (`~/.config/opencode/opencode.json`)
-2. Project config (`opencode.json`)
-3. Global plugin directory (`~/.config/opencode/plugins/`)
-4. Project plugin directory (`.opencode/plugins/`)
+A `plugins/` directory beside a project-root `opencode.json(c)` is not discovered automatically; configure its plugin
+directories explicitly or move it under `.opencode/`.
 
-Duplicate npm packages with the same name and version are loaded once. However, a local plugin and an npm plugin with similar names are both loaded separately.
-
----
-
-## Create a plugin
-
-A plugin is a **JavaScript/TypeScript module** that exports one or more plugin
-functions. Each function receives a context object and returns a hooks object.
-
----
-
-### Dependencies
-
-Local plugins and custom tools can use external npm packages. Add a `package.json` to your config directory with the dependencies you need.
-
-```json title=".opencode/package.json"
+```jsonc title="opencode.jsonc"
 {
-  "dependencies": {
-    "shescape": "^2.1.0"
-  }
+  "plugins": ["./plugins/local"]
 }
 ```
 
-OpenCode runs `bun install` at startup to install these. Your plugins and tools can then import them.
+## Control
 
-```ts title=".opencode/plugins/my-plugin.ts"
-import { escape } from "shescape"
+Plugin entries are processed in order. Prefix an ID or wildcard with `-` to disable it, use `*` for every plugin, and
+use `.*` to match an ID prefix. A later ID re-enables a plugin.
 
-export const MyPlugin = async (ctx) => {
-  return {
-    "tool.execute.before": async (input, output) => {
-      if (input.tool === "bash") {
-        output.args.command = escape(output.args.command)
-      }
-    },
-  }
+```jsonc title="opencode.jsonc"
+{
+  "plugins": ["*", "-opencode.provider.*", "opencode.provider.openai", "-acme.reviewer"]
 }
 ```
 
----
+Two built-in plugins ignore removals so that a repository cannot switch off
+[policy](/policies) enforcement: `opencode.config.policy` and
+`opencode.provider.opencode`, the Console connection that delivers organization
+policy.
 
-### Basic structure
+## Manage
 
-```js title=".opencode/plugins/example.js"
-export const MyPlugin = async ({ project, client, $, directory, worktree }) => {
-  console.log("Plugin initialized!")
+Install, list, check, update, or remove global package plugins with the CLI.
 
-  return {
-    // Hook implementations go here
-  }
+```sh
+opencode plugin add opencode-acme-plugin@1.2.0
+opencode plugin list
+opencode plugin list --builtin
+opencode plugin check
+opencode plugin update
+opencode plugin update opencode-acme-plugin
+opencode plugin remove opencode-acme-plugin@1.2.0
+```
+
+`plugin check` checks server and TUI-only package plugins for updates. `plugin update` updates every outdated package;
+pass a configured package target to check or update only that package. Local plugins and exact package revisions are skipped.
+
+Package installation accepts npm names with versions, tags, or ranges, plus npm-compatible Git package specifications.
+Git repositories can use hosted shortcuts, HTTPS, or SSH, including private repositories available through your existing
+Git credentials.
+
+```sh
+opencode plugin add @acme/opencode-plugin@latest
+opencode plugin add github:acme/opencode-plugin
+opencode plugin add git+ssh://git@github.com/acme/opencode-plugin.git#main
+opencode plugin add 'github:acme/plugins#main::path:packages/opencode-plugin'
+```
+
+Branches, tags, complete commit hashes, and npm's `::path:` repository-subdirectory selectors are supported. Configure
+local paths directly; tarball and npm alias targets are not accepted by `plugin add`.
+
+## Reload
+
+Changes under watched config directories reload automatically. Server startup loads cached package plugins immediately,
+installs missing packages in the background, and checks unpinned npm and Git plugins for updates without changing the
+installed package. Exact npm versions and full Git commit hashes stay pinned. Changes to unwatched local dependencies may
+still require restarting OpenCode.
+
+```sh
+touch .opencode/plugins/concise/index.ts
+opencode service restart
+```
+
+## Terminal
+
+CLI-only plugins are configured separately and remain active when connected to a remote server.
+
+```json title="cli.json"
+{
+  "plugins": ["opencode-acme-cli"]
 }
 ```
 
-The plugin function receives:
-
-- `project`: The current project information.
-- `directory`: The current working directory.
-- `worktree`: The git worktree path.
-- `client`: An opencode SDK client for interacting with the AI.
-- `$`: Bun's [shell API](https://bun.com/docs/runtime/shell) for executing commands.
-
----
-
-### TypeScript support
-
-For TypeScript plugins, you can import types from the plugin package:
-
-```ts title="my-plugin.ts" {1}
-import type { Plugin } from "@opencode-ai/plugin"
-
-export const MyPlugin: Plugin = async ({ project, client, $, directory, worktree }) => {
-  return {
-    // Type-safe hook implementations
-  }
-}
-```
-
----
-
-### Events
-
-Plugins can subscribe to events as seen below in the Examples section. Here is a list of the different events available.
-
-#### Command Events
-
-- `command.executed`
-
-#### File Events
-
-- `file.edited`
-- `file.watcher.updated`
-
-#### Installation Events
-
-- `installation.updated`
-
-#### LSP Events
-
-- `lsp.client.diagnostics`
-- `lsp.updated`
-
-#### Message Events
-
-- `message.part.removed`
-- `message.part.updated`
-- `message.removed`
-- `message.updated`
-
-#### Permission Events
-
-- `permission.asked`
-- `permission.replied`
-
-#### Server Events
-
-- `server.connected`
-
-#### Session Events
-
-- `session.created`
-- `session.compacted`
-- `session.deleted`
-- `session.diff`
-- `session.error`
-- `session.idle`
-- `session.status`
-- `session.updated`
-
-#### Todo Events
-
-- `todo.updated`
-
-#### Shell Events
-
-- `shell.env`
-
-#### Tool Events
-
-- `tool.execute.after`
-- `tool.execute.before`
-
-#### TUI Events
-
-- `tui.prompt.append`
-- `tui.command.execute`
-- `tui.toast.show`
-
----
-
-## Examples
-
-Here are some examples of plugins you can use to extend opencode.
-
----
-
-### Send notifications
-
-Send notifications when certain events occur:
-
-```js title=".opencode/plugins/notification.js"
-export const NotificationPlugin = async ({ project, client, $, directory, worktree }) => {
-  return {
-    event: async ({ event }) => {
-      // Send notification on session completion
-      if (event.type === "session.idle") {
-        await $`osascript -e 'display notification "Session completed!" with title "opencode"'`
-      }
-    },
-  }
-}
-```
-
-We are using `osascript` to run AppleScript on macOS. Here we are using it to send notifications.
-
-:::note
-If you’re using the OpenCode desktop app, it can send system notifications automatically when a response is ready or when a session errors.
-:::
-
----
-
-### .env protection
-
-Prevent opencode from reading `.env` files:
-
-```javascript title=".opencode/plugins/env-protection.js"
-export const EnvProtection = async ({ project, client, $, directory, worktree }) => {
-  return {
-    "tool.execute.before": async (input, output) => {
-      if (input.tool === "read" && output.args.filePath.includes(".env")) {
-        throw new Error("Do not read .env files")
-      }
-    },
-  }
-}
-```
-
----
-
-### Inject environment variables
-
-Inject environment variables into all shell execution (AI tools and user terminals):
-
-```javascript title=".opencode/plugins/inject-env.js"
-export const InjectEnvPlugin = async () => {
-  return {
-    "shell.env": async (input, output) => {
-      output.env.MY_API_KEY = "secret"
-      output.env.PROJECT_ROOT = input.cwd
-    },
-  }
-}
-```
-
----
-
-### Custom tools
-
-Plugins can also add custom tools to opencode:
-
-```ts title=".opencode/plugins/custom-tools.ts"
-import { type Plugin, tool } from "@opencode-ai/plugin"
-
-export const CustomToolsPlugin: Plugin = async (ctx) => {
-  return {
-    tool: {
-      mytool: tool({
-        description: "This is a custom tool",
-        args: {
-          foo: tool.schema.string(),
-        },
-        async execute(args, context) {
-          const { directory, worktree } = context
-          return `Hello ${args.foo} from ${directory} (worktree: ${worktree})`
-        },
-      }),
-    },
-  }
-}
-```
-
-The `tool` helper creates a custom tool that opencode can call. It takes a Zod schema function and returns a tool definition with:
-
-- `description`: What the tool does
-- `args`: Zod schema for the tool's arguments
-- `execute`: Function that runs when the tool is called
-
-Your custom tools will be available to opencode alongside built-in tools.
-
-:::note
-If a plugin tool uses the same name as a built-in tool, the plugin tool takes precedence.
-:::
-
----
-
-### Logging
-
-Use `client.app.log()` instead of `console.log` for structured logging:
-
-```ts title=".opencode/plugins/my-plugin.ts"
-export const MyPlugin = async ({ client }) => {
-  await client.app.log({
-    body: {
-      service: "my-plugin",
-      level: "info",
-      message: "Plugin initialized",
-      extra: { foo: "bar" },
-    },
-  })
-}
-```
-
-Levels: `debug`, `info`, `warn`, `error`. See [SDK documentation](https://opencode.ai/docs/sdk) for details.
-
----
-
-### Compaction hooks
-
-Customize the context included when a session is compacted:
-
-```ts title=".opencode/plugins/compaction.ts"
-import type { Plugin } from "@opencode-ai/plugin"
-
-export const CompactionPlugin: Plugin = async (ctx) => {
-  return {
-    "experimental.session.compacting": async (input, output) => {
-      // Inject additional context into the compaction prompt
-      output.context.push(`
-## Custom Context
-
-Include any state that should persist across compaction:
-- Current task status
-- Important decisions made
-- Files being actively worked on
-`)
-    },
-  }
-}
-```
-
-The `experimental.session.compacting` hook fires before the LLM generates a continuation summary. Use it to inject domain-specific context that the default compaction prompt would miss.
-
-You can also replace the compaction prompt entirely by setting `output.prompt`:
-
-```ts title=".opencode/plugins/custom-compaction.ts"
-import type { Plugin } from "@opencode-ai/plugin"
-
-export const CustomCompactionPlugin: Plugin = async (ctx) => {
-  return {
-    "experimental.session.compacting": async (input, output) => {
-      // Replace the entire compaction prompt
-      output.prompt = `
-You are generating a continuation prompt for a multi-agent swarm session.
-
-Summarize:
-1. The current task and its status
-2. Which files are being modified and by whom
-3. Any blockers or dependencies between agents
-4. The next steps to complete the work
-
-Format as a structured prompt that a new agent can use to resume work.
-`
-    },
-  }
-}
-```
-
-When `output.prompt` is set, it completely replaces the default compaction prompt. The `output.context` array is ignored in this case.
+<Card title="Build a plugin" href="/build/plugins">
+  Create plugins that add tools, hooks, integrations, commands, agents, and other behavior.
+</Card>

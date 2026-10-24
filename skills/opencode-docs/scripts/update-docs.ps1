@@ -13,23 +13,26 @@ $SuccessCount = 0
 $ErrorCount = 0
 $SkippedCount = 0
 
-# 文档页面控制台执行
-# copy(Array.from(document.querySelectorAll(".sidebar-content a")).filter(i=>i.href.startsWith("https://opencode.ai/docs/")).map(i=>i.href.replace(/zh-cn\/([^\/]+)\/?$/,'$1.md')).join("\n"))
-# 第一个URL需要特殊处理下，变成/index.md
+# 文档页面控制台执行，每个tag都要分别执行（除了api）
+# copy(Array.from(document.querySelectorAll(".docs-frame .docs-sidebar a")).filter(i=>i.href.startsWith("https://opencode.ai/v2/docs/")).map(i=>i.href.replace(/zh-cn\/([^\/]+)\/?$/,'$1.md')).join("\n"))
 $DocLinks = Get-Content $DocFile
 
 $jobs = @()
 for ($i = 0; $i -lt $DocLinks.Count; $i++) {
-    $link = $DocLinks[$i]
+    $link = $DocLinks[$i].TrimEnd("/")
     $urls = $link -split "/"
-    $paths = $urls | Select-Object -Skip 3
+    $paths = $urls | Select-Object -Skip 4
     $name = $paths -join "/"
-    if ($paths.Length -gt 1) {
+    if (($paths -is [array]) -and ($paths.Length -gt 1)) {
         $folder = $paths[0..$($paths.Length - 2)]
         $folder = Join-Path $RootFolder $folder
         if (-not (Test-Path $folder)) {
             New-Item -Path $folder -ItemType Directory | Out-Null
         }
+        $name += ".md"
+    }
+    else {
+        $name += "/intro.md"
     }
     $path = Join-Path $RootFolder $name
     Write-Host -ForegroundColor Yellow "[$($i+1)/$($DocLinks.Count)] Downloading $link to $path"
@@ -42,7 +45,7 @@ for ($i = 0; $i -lt $DocLinks.Count; $i++) {
             return [PSCustomObject]@{ Status = 'Skipped'; Message = "File $path already exists, skipping download." }
         }
         try {
-            $response = Invoke-WebRequest -UserAgent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" -Uri $link -ErrorAction Stop
+            $response = Invoke-WebRequest -Headers @{Accept = "text/markdown" }  -UserAgent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" -Uri $link -ErrorAction Stop
             $response.Content -split "`r?`n" | Select-Object -Skip 0 | Set-Content -Path $path -Encoding UTF8
             return [PSCustomObject]@{ Status = 'Success'; Message = "Downloaded $link to $path" }
         }
