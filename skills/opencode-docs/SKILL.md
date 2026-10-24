@@ -1,6 +1,6 @@
 ---
 name: opencode-docs
-description: Local knowledge base mirroring the official OpenCode AI coding agent documentation V2.
+description: Local knowledge base mirroring the official OpenCode (v2) AI coding agent documentation. Use when answering questions about OpenCode installation, `opencode.jsonc` / `cli.json` configuration, providers & models, agents, skills, tools, permissions, policies, MCP servers, the TUI/CLI commands, plugin/SDK development, or OpenCode Console (Go, workspaces, billing, API, harnesses).
 metadata:
   author: Ecat
   version: "2.1.4"
@@ -8,18 +8,20 @@ metadata:
 
 # OpenCode Documentation (v2)
 
+## 🔎 How to Use
+
+1. Find the relevant page in the [Documentation Directory](#-documentation-directory) below and read it.
+2. If unsure which page covers a topic, grep `docs/` for a keyword (config key, CLI flag, package name, etc.).
+3. Large pages (>30 KB): `build/plugins.md`, `build/plugins/effect.md`, `console/go.md`, `console/models.md`, `cli/keybinds.md`. List their `#` headings first, then read only the relevant section.
+
 ## ⚠️ Important Note on References
 
 Because this documentation is a local mirror of the official OpenCode documentation (`https://opencode.ai/v2/docs`), internal reference links within the Markdown files use website root-relative paths without the `docs/` prefix or `.md` extension (e.g., `[Permissions](/permissions)`, `[CLI settings](/cli/config)`, `[Plugins](/build/plugins/migrate-v1)`).
 
 When navigating between documents:
 
-1. **Remove anchors/fragments**: Strip any trailing `#anchor` (e.g., `/config#experimental` ➔ `/config`).
-2. **Directory & Landing Page Mappings**:
-   - `/` or `/intro` ➔ `docs/intro.md`
-   - `/cli` ➔ `docs/cli.md`
-   - `/build` ➔ `docs/build.md`
-   - `/console` ➔ `docs/console.md`
+1. **Anchors/fragments**: Strip any trailing `#anchor` to get the file (e.g., `/config#experimental` ➔ `/config`), then locate the matching heading inside the file (e.g., `#experimental` ➔ `## Experimental`).
+2. **Root page**: `/` or `/intro` ➔ `docs/intro.md`. Section landing pages follow the standard rule (`/cli` ➔ `docs/cli.md`, `/build` ➔ `docs/build.md`, `/console` ➔ `docs/console.md`).
 3. **Standard Links**: Prepend `docs` and append `.md`:
    - `/<path>` ➔ `docs/<path>.md`
    - Examples:
@@ -28,7 +30,8 @@ When navigating between documents:
      - `[OpenCode Go](/console/go)` ➔ `docs/console/go.md`
      - `[Plugin RPC](/build/plugins/rpc)` ➔ `docs/build/plugins/rpc.md`
      - `[Claude Code](/console/harnesses/claude-code)` ➔ `docs/console/harnesses/claude-code.md`
-4. **External Links**: Absolute URLs (e.g. `https://models.dev`, `https://modelcontextprotocol.io`) remain external resources.
+4. **HTTP API Reference (not mirrored)**: `/api` and `/api#schema-*` links (e.g., `/api#schema-Session.Info`) point to the generated OpenAPI reference, which has **no local copy**. Treat them as external (`https://opencode.ai/v2/docs/api`). For local alternatives, see `docs/build/client.md`, `docs/cli/commands.md` (`opencode api`), and `docs/troubleshooting.md` (Inspect the API).
+5. **External Links**: Absolute URLs (e.g. `https://models.dev`, `https://modelcontextprotocol.io`) remain external resources.
 
 ---
 
@@ -36,16 +39,16 @@ When navigating between documents:
 
 ### 🚀 Getting Started & Migration
 
-- [Introduction & Installation](docs/intro.md) - OpenCode overview, platform binaries (macOS, Windows, Linux), terminal, desktop app, and web UI.
+- [Introduction & Installation](docs/intro.md) - OpenCode overview and installation: CLI, desktop app, web UI, Docker, connecting providers, and customization.
 - [Migrate from V1](docs/migrate-v1.md) - Upgrading from OpenCode v1 to v2, breaking changes, config consolidation (`cli.json` vs `opencode.jsonc`), and policy migration.
-- [Troubleshooting](docs/troubleshooting.md) - Common issues, debugging OpenCode with self-diagnostics, server logs, and compatibility issue reporting.
+- [Troubleshooting](docs/troubleshooting.md) - Checking the background service, browser origins (CORS), inspecting the API, logs, heap snapshots, CPU/memory profiles, service files, and reporting issues.
 
 ### 🧠 Core Concepts & Workflows
 
 - [Instructions (`AGENTS.md`)](docs/instructions.md) - Persistent project guidance, build commands, architecture notes, and coding rules.
 - [Agents](docs/agents.md) - Custom sub-agents (e.g., read-only reviewers), roles, tool overrides, and request options.
 - [Skills](docs/skills.md) - Reusable task instructions defined in `.opencode/skills/<skill-id>/SKILL.md`.
-- [Tools](docs/tools.md) - Built-in tool capabilities (`read`, `write`, `edit`, `patch`, `bash`, `websearch`), tool selection, and execution permissions.
+- [Tools](docs/tools.md) - Built-in tools (`read`, `glob`, `grep`, `edit`, `write`, `patch`, `shell`, `webfetch`, `websearch`, `question`, `skill`, subagents, execute, sessions, worktrees), browser, extensions, and per-tool permissions.
 - [Attachments](docs/attachments.md) - Adding local files, images, and context to prompt interactions.
 - [References](docs/references.md) - Named external directory and Git repository references outside the project workspace.
 - [Snapshots](docs/snapshots.md) - Session checkpointing to undo conversation steps and file modifications together.
@@ -61,22 +64,22 @@ When navigating between documents:
 - [Policies](docs/policies.md) - Organization and workspace policies, provider restrictions, and hard denials.
 - [Network](docs/network.md) - Proxy environment variables, corporate network configurations, and loopback exclusions.
 - [Formatters](docs/formatters.md) - Auto-formatting file edits with tools like Prettier, rustfmt, gofmt, etc.
-- [Web Search](docs/websearch.md) - Web search configuration, DuckDuckGo / Brave / Google search providers, and query permissions.
+- [Web Search](docs/websearch.md) - Web search providers (Exa, Firecrawl, Parallel, Tavily, TinyFish), `random` selection, rate-limit fallback, permissions, and disabling.
 - [MCP Servers](docs/mcp-servers.md) - Model Context Protocol integration, connecting external tools, prompts, resources, and instructions.
 
 ### 💻 CLI & Terminal Client (`cli/`)
 
-- [CLI Overview](docs/cli.md) - Terminal CLI overview, starting interactive sessions, and quick start.
+- [CLI Overview](docs/cli.md) - Terminal CLI overview, automation, mini mode, background service, file paths, and uninstall.
 - [TUI Guide](docs/cli/tui.md) - Terminal User Interface usage, interactive chatting, and keyboard navigation.
 - [CLI Settings](docs/cli/config.md) - Terminal client configuration via global `cli.json` (keybinds, themes, plugins).
-- [CLI Commands](docs/cli/commands.md) - Command-line reference (`opencode run`, `opencode server`, flags).
+- [CLI Commands](docs/cli/commands.md) - Command-line reference (`run`, `mini`, `session`, `auth`, `models`, `mcp`, `plugin`, `serve`, `pair`, `service`, `api`, `acp`, `debug`, `upgrade`, etc.).
 - [Custom Slash Commands](docs/commands.md) - Defining custom prompt slash commands in `.opencode/commands/<name>.md`.
 - [Keybinds](docs/cli/keybinds.md) - Keyboard shortcut customization in `cli.json`.
 - [Theme Settings](docs/cli/theme.md) - Terminal themes, mode (`light`, `dark`, `system`), and ANSI palette colors.
 - [Themes Reference](docs/themes.md) - Built-in themes catalog and styling reference.
 - [CLI Providers](docs/cli/providers.md) - Managing and authenticating provider credentials directly in the TUI.
 - [CLI Plugins](docs/cli/plugins.md) - Loading UI and terminal plugins within the CLI.
-- [Web Interface](docs/cli/web.md) - Web-based UI served from the OpenCode server (`opencode web`, `opencode pair`).
+- [Web Interface](docs/cli/web.md) - Web UI served from the OpenCode server: pairing (`opencode pair`, `--remote`), SSH forwarding, `opencode service set`, and standalone `opencode serve`.
 - [Agent Client Protocol (ACP)](docs/cli/acp.md) - Running OpenCode as an ACP agent server (`opencode acp`).
 
 ### 🛠️ Build & SDK Development (`build/`)
