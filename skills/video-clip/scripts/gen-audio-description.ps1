@@ -15,7 +15,12 @@
 
 param (
     [Parameter(Mandatory = $true)]
-    [System.IO.FileInfo]$InputFile
+    [System.IO.FileInfo]$InputFile,
+    [Parameter(Mandatory = $false)]
+    [string]$Model = "gemini-3.8-flash",
+    [Parameter(Mandatory = $false)]
+    [ValidateSet("low", "medium", "high", "xhigh", "max")]
+    [string]$Effort = "medium"
 )
 
 $OutputEncoding = [System.Text.UTF8Encoding]::new()
@@ -81,7 +86,7 @@ All you need to do is to analyze the file provided to you. Do not execute any ot
 
 "
 
-$result = $prompt | agy --sandbox --disable-slash-commands --output-format json --json-schema $JsonSchemaFile --add-dir $InputFile.DirectoryName | ConvertFrom-Json
+$result = $prompt | agy --sandbox --disable-slash-commands --model $Model --effort $Effort --output-format json --json-schema $JsonSchemaFile --add-dir $InputFile.DirectoryName | ConvertFrom-Json
 #$result
 $description = $result.structured_output.markdown
 
