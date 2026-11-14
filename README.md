@@ -28,3 +28,4 @@ Windows需要用`mklink /j`方式。
 - [DingTalk-Real-AI/dingtalk-channel-sdk-nodejs](https://github.com/DingTalk-Real-AI/dingtalk-channel-sdk-nodejs)
 - [DingTalk-Real-AI/dingtalk-channel-sdk-go](https://github.com/DingTalk-Real-AI/dingtalk-channel-sdk-go)
 - [DingTalk-Real-AI/dingtalk-channel-sdk-java](https://github.com/DingTalk-Real-AI/dingtalk-channel-sdk-java)
+- [Python SDK for ACP](https://github.com/agentclientprotocol/python-sdk)
